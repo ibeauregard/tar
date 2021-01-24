@@ -4,7 +4,7 @@
 my_tar
 
 ## Description
-my_tar is a command to manipulate tape archive. The first option to tar is a mode indicator from the following list:
+my_tar is a command to manipulate tape archive. The first option to my_tar is a mode indicator from the following list:
 
 -c Create a new archive containing the specified items.
 -r Like -c, but new entries are appended to the archive. The -f option is required.
@@ -18,4 +18,4 @@ Unless specifically stated otherwise, options are applicable in all operating mo
 -f file Read the archive from or write the archive to the specified file. The filename can be standard input or standard output.
 
 ## Exit Status
-The tar utility returns 0 on success, and >0 if an error occurs.
+The my_tar utility returns 0 on success, and > 0 if an error occurs.
