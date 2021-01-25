@@ -12,8 +12,5 @@ $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) -o $(MAIN) $(LINKERFLAG) $(OBJS)
 	$(RM) *.o
 
-.c.o:
-	$(CC) $(CFLAGS) -c $<  -o $@
-
 clean:
 	$(RM) $(MAIN)
