@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int my_tar(int n_arguments, char** arguments)
+int my_tar(int n_arguments, char **arguments)
 {
 	printf("Called my_tar with %d arguments:\n", n_arguments);
 	for (int i = 0; i < n_arguments; i++) {
@@ -9,7 +9,7 @@ int my_tar(int n_arguments, char** arguments)
 	return 0;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	return my_tar(argc - 1, argv + 1);
 }
