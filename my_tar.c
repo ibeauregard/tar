@@ -5,7 +5,10 @@
 int my_tar(int n_arguments, char **arguments)
 {
 	Params params;
-	int returnValue = parse_arguments(n_arguments, arguments, &params);
+	if (parseArguments(n_arguments, arguments, &params))
+	{
+		return EXIT_FAILURE;
+	}
 	_puts("Result of arg parsing:");
 	_printf("Mode: %d\n", params.mode);
 	_printf("Archive path: %s\n", params.archivePath);
@@ -17,7 +20,7 @@ int my_tar(int n_arguments, char **arguments)
 		pathNode = pathNode->next;
 		free(current);
 	}
-	return returnValue;
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv)
