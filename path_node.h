@@ -7,4 +7,6 @@ typedef struct s_path_node
 	struct s_path_node *next;
 } PathNode;
 
+PathNode *newPathNode(char *path);
+
 #endif

@@ -2,6 +2,7 @@
 #define PARAMS_H
 
 #include "path_node.h"
+#include "mode.h"
 
 typedef struct s_params
 {
@@ -9,5 +10,7 @@ typedef struct s_params
 	char *archivePath;
 	PathNode *filePaths;
 } Params;
+
+int parse_arguments(int n_arguments, char **arguments, Params *params);
 
 #endif
