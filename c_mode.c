@@ -17,5 +17,5 @@ int c_mode(Params *params)
 		free(current);
 	}
 	close(archiveFD);
-	return 0;
+	return EXIT_SUCCESS;
 }
