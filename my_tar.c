@@ -12,19 +12,6 @@ int my_tar(int n_arguments, char **arguments)
 	if (parseArguments(n_arguments, arguments, &params)) {
 		return EXIT_FAILURE;
 	}
-
-	_puts("Result of arg parsing:");
-	_printf("Mode: %d\n", params.mode);
-	_printf("Archive path: %s\n", params.archivePath);
-	_puts("File arguments:");
-	PathNode *pathNode = params.filePaths;
-	while (pathNode) {
-		_printf("Path: %s\n", pathNode->path);
-		PathNode *current = pathNode;
-		pathNode = pathNode->next;
-		free(current);
-	}
-
 	switch (params.mode) {
 		case C:
 			return c_mode(&params);
