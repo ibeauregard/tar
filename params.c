@@ -125,10 +125,10 @@ void updateLinks(ParamsWrapper *wrapper, PathNode *node)
 
 int validate(const ParamsWrapper *wrapper)
 {
-	Params *params = wrapper->params;
 	if (wrapper->fArgExpected) {
 		return argRequiredError('f');
 	}
+	Params *params = wrapper->params;
 	if (!params->mode) {
 		_dprintf(STDERR_FILENO, "%s", MODE_UNDEFINED_ERR_MESSAGE);
 		return EXIT_FAILURE;
