@@ -4,7 +4,9 @@
 typedef struct s_path_node
 {
 	char *path;
-	struct pathNode *next;
+	struct s_path_node *next;
 } PathNode;
+
+PathNode *newPathNode(char *path);
 
 #endif

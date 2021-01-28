@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -Werror -g3 -fsanitize=address
+CFLAGS = -Wall -Wextra -Wpedantic -Werror
+SANITIZE = -g3 -fsanitize=address
 LINKERFLAG = -lm
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
@@ -9,7 +10,7 @@ MAIN = my_tar
 all: $(MAIN)
 
 $(MAIN): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(LINKERFLAG) $^
+	$(CC) $(CFLAGS) $(SANITIZE) -o $@ $(LINKERFLAG) $^
 
 clean:
 	$(RM) $(OBJS)

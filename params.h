@@ -2,12 +2,15 @@
 #define PARAMS_H
 
 #include "path_node.h"
+#include "mode.h"
 
 typedef struct s_params
 {
 	Mode mode;
 	char *archivePath;
 	PathNode *filePaths;
-};
+} Params;
+
+int parseArguments(int n_arguments, char **arguments, Params *params);
 
 #endif
