@@ -1,10 +1,10 @@
-#include <stdio.h>
+#include "_stdio.h"
 
 int my_tar(int n_arguments, char **arguments)
 {
-	printf("Called my_tar with %d arguments:\n", n_arguments);
+	_printf("Called my_tar with %d arguments:\n", n_arguments);
 	for (int i = 0; i < n_arguments; i++) {
-		puts(arguments[i]);
+		_puts(arguments[i]);
 	}
 	return 0;
 }
