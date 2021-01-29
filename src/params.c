@@ -1,6 +1,6 @@
 #include "params.h"
-#include "_string.h"
-#include "_stdio.h"
+#include "utils/_string.h"
+#include "utils/_stdio.h"
 #include "path_node.h"
 #include <stdlib.h>
 #include <unistd.h>
