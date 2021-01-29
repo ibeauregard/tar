@@ -24,9 +24,9 @@ typedef struct s_params_wrapper
 static void initializeWrapper(ParamsWrapper *wrapper, Params *params);
 static void initialize(Params *params);
 static int handleArgument(char *argument, ParamsWrapper *wrapper);
-static int handleOption(char* option, ParamsWrapper *wrapper);
+static int handleOptions(char* options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
-static int setMode(Mode mode, Params *params);
+static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
 static void updateLinks(ParamsWrapper *params, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int argRequiredError(char option);
@@ -61,7 +61,7 @@ void initialize(Params *params)
 int handleArgument(char *argument, ParamsWrapper *wrapper)
 {
 	if (starts_with(argument, OPTION_PREFIX) && _strlen(argument) > 1) {
-		return handleOption(argument + 1, wrapper);
+		return handleOptions(argument + 1, wrapper);
 	}
 	if (wrapper->fArgExpected) {
 		wrapper->params->archivePath = argument;
@@ -72,25 +72,25 @@ int handleArgument(char *argument, ParamsWrapper *wrapper)
 	return EXIT_SUCCESS;
 }
 
-int handleOption(char* option, ParamsWrapper *wrapper)
+int handleOptions(char* options, ParamsWrapper *wrapper)
 {
-	switch (option[0]) {
+	switch (options[0]) {
 		case 0:
 			return EXIT_SUCCESS;
 		case 'f':
-			return handleOptionF(option[1], wrapper);
+			return handleOptionF(options[1], wrapper);
 		case 'c':
-			return setMode(C, wrapper->params) || handleOption(option + 1, wrapper);
+			return setMode(C, wrapper, options);
 		case 'r':
-			return setMode(R, wrapper->params) || handleOption(option + 1, wrapper);
+			return setMode(R, wrapper, options);
 		case 't':
-			return setMode(T, wrapper->params) || handleOption(option + 1, wrapper);
+			return setMode(T, wrapper, options);
 		case 'u':
-			return setMode(U, wrapper->params) || handleOption(option + 1, wrapper);
+			return setMode(U, wrapper, options);
 		case 'x':
-			return setMode(X, wrapper->params) || handleOption(option + 1, wrapper);
+			return setMode(X, wrapper, options);
 		default:
-			_dprintf(STDERR_FILENO, INVALID_OPTION_ERR_MESSAGE, option[0]);
+			_dprintf(STDERR_FILENO, INVALID_OPTION_ERR_MESSAGE, options[0]);
 			return EXIT_FAILURE;
 	}
 }
@@ -104,14 +104,14 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 	return EXIT_SUCCESS;
 }
 
-int setMode(Mode mode, Params *params)
+int setMode(Mode mode, ParamsWrapper *wrapper, char *options)
 {
-	if (params->mode) {
+	if (wrapper->params->mode) {
 		_dprintf(STDERR_FILENO, "%s", SEVERAL_OPTION_ERR_MESSAGE);
 		return EXIT_FAILURE;
 	}
-	params->mode = mode;
-	return EXIT_SUCCESS;
+	wrapper->params->mode = mode;
+	return handleOptions(options + 1, wrapper);
 }
 
 void updateLinks(ParamsWrapper *wrapper, PathNode *node)
