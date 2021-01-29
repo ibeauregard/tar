@@ -23,6 +23,8 @@ struct posix_header
 	/* 500 */
 } PosixHeader;
 
+#define BLOCKSIZE 512
+
 #define TMAGIC   "ustar"        /* ustar and a null */
 #define TMAGLEN  6
 #define TVERSION "00"           /* 00 and no null */
