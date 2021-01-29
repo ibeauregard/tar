@@ -14,6 +14,7 @@ typedef struct stat Stat;
 static int append(int archiveFD, const char *path, char *block);
 //static int write_header(int archiveFD, Stat *fileStat, char *block);
 static int writeContent(int archiveFD, const char *path, char *block, blkcnt_t n_blocks);
+static int appendEndOfArchive(int archiveFD, char *block);
 static void zfill(char *block);
 static blkcnt_t getNumBlocks(off_t n_bytes);
 
@@ -29,6 +30,7 @@ int c_mode(Params *params)
 		pathNode = pathNode->next;
 		free(current);
 	}
+	appendEndOfArchive(archiveFD, block);
 	close(archiveFD);
 	return EXIT_SUCCESS;
 }
@@ -61,6 +63,16 @@ int writeContent(int archiveFD, const char *path, char *block, blkcnt_t n_blocks
 		write(archiveFD, block, BLOCKSIZE);
 	}
 	close(fd);
+	return EXIT_SUCCESS;
+}
+
+int appendEndOfArchive(int archiveFD, char *block)
+{
+	for (int i = 0; i < 2; i++) {
+		zfill(block);
+		// TODO check for error
+		write(archiveFD, block, BLOCKSIZE);
+	}
 	return EXIT_SUCCESS;
 }
 
