@@ -1,3 +1,5 @@
 my_tar
 *.o
 .idea
+tests/*.tar
+tests/*.txt
