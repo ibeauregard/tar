@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "modes.h"
 
-#define PARSE_ERROR_MESSAGE "Internal application error: Failed to parse mode in params.c\n"
+#define PARSE_ERROR_MESSAGE "my_tar: Failed to parse mode in params.c\n"
 
 int my_tar(int n_arguments, char **arguments)
 {
