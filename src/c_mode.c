@@ -10,12 +10,13 @@
 
 #define ARCHIVE_FLAGS O_CREAT|O_WRONLY|O_TRUNC
 #define ARCHIVE_MODE S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
+#define SYSCALL_ERR_CODE -1
+#define END_OF_ARCHIVE_N_BLOCKS 2
 #define STAT_ERR "my_tar: %s: Cannot stat: No such file or directory\n"
 #define CANT_OPEN_FILE_ERR "my_tar: Cannot open %s\n"
 #define CANT_READ_ERR "my_tar: Cannot read from %s\n"
 #define CANT_WRITE_ERR "my_tar: Cannot write to %s\n"
 #define FILE_IS_ARCHIVE_ERR "my_tar: %s: file is the archive; not dumped\n"
-#define SYSCALL_ERR_CODE -1
 
 typedef struct stat Stat;
 typedef struct s_archive_file {
@@ -102,7 +103,7 @@ int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks)
 
 int appendEnd(ArchiveFile *archiveFile)
 {
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < END_OF_ARCHIVE_N_BLOCKS; i++) {
 		zfill(archiveFile->block);
 		write(archiveFile->fd, archiveFile->block, BLOCKSIZE);
 	}
