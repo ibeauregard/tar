@@ -2,6 +2,7 @@
 #include "tar_header.h"
 #include "utils/_string.h"
 #include "utils/_stdio.h"
+#include "constants.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -14,6 +15,7 @@
 #define CANT_READ_ERR "my_tar: Cannot read from %s\n"
 #define CANT_WRITE_ERR "my_tar: Cannot write to %s\n"
 #define FILE_IS_ARCHIVE_ERR "my_tar: %s: file is the archive; not dumped\n"
+#define SYSCALL_ERR_CODE -1
 
 typedef struct stat Stat;
 typedef struct s_archive_file {
@@ -22,6 +24,7 @@ typedef struct s_archive_file {
 	char block[BLOCKSIZE];
 } ArchiveFile;
 
+static int getArchiveFd(const char *archivePath);
 static int append(ArchiveFile *archiveFile, const char *path);
 //static int write_header(int archiveFD, Stat *fileStat, char *block);
 static int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks);
@@ -32,14 +35,13 @@ static int error(const char *message, const char *messageArg);
 
 int c_mode(Params *params)
 {
-	int archiveFD = open(params->archivePath, ARCHIVE_FLAGS, ARCHIVE_MODE);
-	if (archiveFD == -1) {
-		return error(CANT_OPEN_FILE_ERR, params->archivePath);
-	}
 	ArchiveFile archiveFile = {
 			.path = params->archivePath,
-			.fd = archiveFD,
+			.fd = getArchiveFd(params->archivePath),
 	};
+	if (archiveFile.fd == SYSCALL_ERR_CODE) {
+		return error(CANT_OPEN_FILE_ERR, params->archivePath);
+	}
 	while (params->filePaths) {
 		if (append(&archiveFile, params->filePaths->path)) return EXIT_FAILURE;
 		PathNode *current = params->filePaths;
@@ -47,14 +49,22 @@ int c_mode(Params *params)
 		free(current);
 	}
 	appendEnd(&archiveFile);
-	close(archiveFD);
+	close(archiveFile.fd);
 	return EXIT_SUCCESS;
+}
+
+int getArchiveFd(const char *archivePath)
+{
+	if (_strcmp(archivePath, STDOUT_PATH)) {
+		return open(archivePath, ARCHIVE_FLAGS, ARCHIVE_MODE);
+	}
+	return STDOUT_FILENO;
 }
 
 int append(ArchiveFile *archiveFile, const char *path)
 {
 	Stat fileStat;
-	if (lstat(path, &fileStat)) {
+	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
 		return error(STAT_ERR, path);
 	}
 //	write_header(archiveFD, &fileStat, block);
@@ -74,15 +84,15 @@ int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks)
 		return error(FILE_IS_ARCHIVE_ERR, path);
 	}
 	int fd = open(path, O_RDONLY);
-	if (fd == -1) {
+	if (fd == SYSCALL_ERR_CODE) {
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
 	for (blkcnt_t i = 0; i < n_blocks; i++) {
 		if (i == n_blocks - 1) zfill(archiveFile->block);
-		if (read(fd, archiveFile->block, BLOCKSIZE)) {
+		if (read(fd, archiveFile->block, BLOCKSIZE) == SYSCALL_ERR_CODE) {
 			return error(CANT_READ_ERR, path);
 		}
-		if (write(archiveFile->fd, archiveFile->block, BLOCKSIZE)) {
+		if (write(archiveFile->fd, archiveFile->block, BLOCKSIZE) == SYSCALL_ERR_CODE) {
 			return error(CANT_WRITE_ERR, archiveFile->path);
 		}
 	}
