@@ -5,15 +5,19 @@ if [ $# -eq 0 ]; then
 	exit 1 
 fi
 
+# Delete intermediate files before script ends
 cleanUp() {
-	rm $arg.txt >> /dev/null 2>&1
-	rm my_$arg.txt >> /dev/null 2>&1
+	for arg in ${BASH_ARGV[*]}
+	do
+		rm $arg.txt >> /dev/null 2>&1
+		rm my_$arg.txt >> /dev/null 2>&1
+		rm $arg.tar >> /dev/null 2>&1
+		rm my_$arg.tar >> /dev/null 2>&1
+	done
 	rm extract_tar_contents.txt >> /dev/null 2>&1
 	rm extract_my_tar_contents.txt >> /dev/null 2>&1
 	rm -r extract_tar >> /dev/null 2>&1
 	rm -r extract_my_tar >> /dev/null 2>&1
-	rm $arg.tar >> /dev/null 2>&1
-	rm my_$arg.tar >> /dev/null 2>&1
 }
 
 # TEST 1: Creating tar archive
