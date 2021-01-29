@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include "modes.h"
 
-#define PARSE_ERROR_MESSAGE "my_tar: Failed to parse mode in params.c\n"
+#define PARSE_ERROR_MESSAGE "my_tar: Internal error: Failed to parse mode in params.c\n"
+#define PREVIOUS_ERROR_MESSAGE "my_tar: Exiting with failure status due to previous errors\n"
 
 int my_tar(int n_arguments, char **arguments)
 {
@@ -12,21 +13,31 @@ int my_tar(int n_arguments, char **arguments)
 	if (parseArguments(n_arguments, arguments, &params)) {
 		return EXIT_FAILURE;
 	}
+	int status;
 	switch (params.mode) {
 		case C:
-			return c_mode(&params);
+			status = c_mode(&params);
+			break;
 		case R:
-			return r_mode(&params);
+			status = r_mode(&params);
+			break;
 		case T:
-			return t_mode(&params);
+			status = t_mode(&params);
+			break;
 		case U:
-			return u_mode(&params);
+			status = u_mode(&params);
+			break;
 		case X:
-			return x_mode(&params);
+			status = x_mode(&params);
+			break;
 		default:
+			status = EXIT_FAILURE;
 			_dprintf(STDERR_FILENO, "%s\n", PARSE_ERROR_MESSAGE);
 	}
-	return EXIT_SUCCESS;
+	if (status) {
+		_dprintf(STDERR_FILENO, "%s", PREVIOUS_ERROR_MESSAGE);
+	}
+	return status;
 }
 
 int main(int argc, char **argv)
