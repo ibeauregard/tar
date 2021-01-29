@@ -1,6 +1,7 @@
 #include "modes.h"
 #include "tar_header.h"
 #include "utils/_string.h"
+#include "utils/_stdio.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -8,40 +9,55 @@
 
 #define ARCHIVE_FLAGS O_CREAT|O_WRONLY|O_TRUNC
 #define ARCHIVE_MODE S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
+#define STAT_ERR "my_tar: %s: Cannot stat: No such file or directory\n"
+#define CANT_OPEN_FILE_ERR "my_tar: Cannot open %s\n"
+#define CANT_READ_ERR "my_tar: Cannot read from %s\n"
+#define CANT_WRITE_ERROR "my_tar: Cannot write to %s\n"
 
 typedef struct stat Stat;
+typedef struct s_archive_file {
+	char *path;
+	int fd;
+	char block[BLOCKSIZE];
+} ArchiveFile;
 
-static int append(int archiveFD, const char *path, char *block);
+static int append(ArchiveFile *archiveFile, const char *path);
 //static int write_header(int archiveFD, Stat *fileStat, char *block);
-static int writeContent(int archiveFD, const char *path, char *block, blkcnt_t n_blocks);
-static int appendEndOfArchive(int archiveFD, char *block);
+static int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks);
+static int appendEnd(ArchiveFile *archiveFile);
 static void zfill(char *block);
 static blkcnt_t getNumBlocks(off_t n_bytes);
+static int error(const char *message, const char *messageArg);
 
 int c_mode(Params *params)
 {
-	// TODO check for error
 	int archiveFD = open(params->archivePath, ARCHIVE_FLAGS, ARCHIVE_MODE);
-	char block[BLOCKSIZE];
-	PathNode *pathNode = params->filePaths;
-	while (pathNode) {
-		if (append(archiveFD, pathNode->path, block)) return EXIT_FAILURE;
-		PathNode *current = pathNode;
-		pathNode = pathNode->next;
+	if (archiveFD == -1) {
+		return error(CANT_OPEN_FILE_ERR, params->archivePath);
+	}
+	ArchiveFile archiveFile = {
+			.path = params->archivePath,
+			.fd = archiveFD,
+	};
+	while (params->filePaths) {
+		if (append(&archiveFile, params->filePaths->path)) return EXIT_FAILURE;
+		PathNode *current = params->filePaths;
+		params->filePaths = params->filePaths->next;
 		free(current);
 	}
-	appendEndOfArchive(archiveFD, block);
+	appendEnd(&archiveFile);
 	close(archiveFD);
 	return EXIT_SUCCESS;
 }
 
-int append(int archiveFD, const char *path, char *block)
+int append(ArchiveFile *archiveFile, const char *path)
 {
 	Stat fileStat;
-	// TODO check for error
-	stat(path, &fileStat);
+	if (lstat(path, &fileStat)) {
+		return error(STAT_ERR, path);
+	}
 //	write_header(archiveFD, &fileStat, block);
-	writeContent(archiveFD, path, block, getNumBlocks(fileStat.st_size));
+	writeContent(archiveFile, path, getNumBlocks(fileStat.st_size));
 	return EXIT_SUCCESS;
 }
 
@@ -51,27 +67,30 @@ int append(int archiveFD, const char *path, char *block)
 //	return EXIT_SUCCESS;
 //}
 
-int writeContent(int archiveFD, const char *path, char *block, blkcnt_t n_blocks)
+int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks)
 {
-	// TODO check for error
 	int fd = open(path, O_RDONLY);
+	if (fd == -1) {
+		return error(CANT_OPEN_FILE_ERR, path);
+	}
 	for (blkcnt_t i = 0; i < n_blocks; i++) {
-		if (i == n_blocks - 1) zfill(block);
-		// TODO check for error
-		read(fd, block, BLOCKSIZE);
-		// TODO check for error
-		write(archiveFD, block, BLOCKSIZE);
+		if (i == n_blocks - 1) zfill(archiveFile->block);
+		if (read(fd, archiveFile->block, BLOCKSIZE)) {
+			return error(CANT_READ_ERR, path);
+		}
+		if (write(archiveFile->fd, archiveFile->block, BLOCKSIZE)) {
+			return error(CANT_WRITE_ERROR, archiveFile->path);
+		}
 	}
 	close(fd);
 	return EXIT_SUCCESS;
 }
 
-int appendEndOfArchive(int archiveFD, char *block)
+int appendEnd(ArchiveFile *archiveFile)
 {
 	for (int i = 0; i < 2; i++) {
-		zfill(block);
-		// TODO check for error
-		write(archiveFD, block, BLOCKSIZE);
+		zfill(archiveFile->block);
+		write(archiveFile->fd, archiveFile->block, BLOCKSIZE);
 	}
 	return EXIT_SUCCESS;
 }
@@ -86,4 +105,10 @@ void zfill(char *block)
 inline blkcnt_t getNumBlocks(off_t n_bytes)
 {
 	return (n_bytes - 1) / BLOCKSIZE + 1;
+}
+
+int error(const char *message, const char *messageArg)
+{
+	_dprintf(STDERR_FILENO, message, messageArg);
+	return EXIT_FAILURE;
 }
