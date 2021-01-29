@@ -12,7 +12,8 @@
 #define STAT_ERR "my_tar: %s: Cannot stat: No such file or directory\n"
 #define CANT_OPEN_FILE_ERR "my_tar: Cannot open %s\n"
 #define CANT_READ_ERR "my_tar: Cannot read from %s\n"
-#define CANT_WRITE_ERROR "my_tar: Cannot write to %s\n"
+#define CANT_WRITE_ERR "my_tar: Cannot write to %s\n"
+#define FILE_IS_ARCHIVE_ERR "my_tar: %s: file is the archive; not dumped\n"
 
 typedef struct stat Stat;
 typedef struct s_archive_file {
@@ -69,6 +70,9 @@ int append(ArchiveFile *archiveFile, const char *path)
 
 int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks)
 {
+	if (!_strcmp(archiveFile->path, path)) {
+		return error(FILE_IS_ARCHIVE_ERR, path);
+	}
 	int fd = open(path, O_RDONLY);
 	if (fd == -1) {
 		return error(CANT_OPEN_FILE_ERR, path);
@@ -79,7 +83,7 @@ int writeContent(ArchiveFile *archiveFile, const char *path, blkcnt_t n_blocks)
 			return error(CANT_READ_ERR, path);
 		}
 		if (write(archiveFile->fd, archiveFile->block, BLOCKSIZE)) {
-			return error(CANT_WRITE_ERROR, archiveFile->path);
+			return error(CANT_WRITE_ERR, archiveFile->path);
 		}
 	}
 	close(fd);
