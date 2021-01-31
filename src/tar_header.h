@@ -2,7 +2,7 @@
 
 /* POSIX header. */
 
-struct posix_header
+typedef struct posix_header
 {                              /* byte offset */
 	char name[100];               /*   0 */
 	char mode[8];                 /* 100 */

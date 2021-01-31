@@ -17,3 +17,14 @@ int _strcmp (const char* str1, const char* str2)
 	for (; *str1 && *str2 && *str1 == *str2; str1++, str2++);
 	return *str1 - *str2;
 }
+
+char* _strcpy(char* dest, const char* source)
+{
+	size_t i;
+	for (i = 0; source[i]; i++)
+	{
+		dest[i] = source[i];
+	}
+	dest[i] = 0;
+	return dest;
+}
