@@ -106,7 +106,7 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 
 int setMode(Mode mode, ParamsWrapper *wrapper, char *options)
 {
-	if (wrapper->params->mode) {
+	if (wrapper->params->mode && wrapper->params->mode != mode) {
 		_dprintf(STDERR_FILENO, "%s", SEVERAL_OPTION_ERR_MESSAGE);
 		return EXIT_FAILURE;
 	}
