@@ -19,7 +19,6 @@ static int append(const char *path, Archive *archive);
 //static int write_header(Archive *archive);//, const Stat *fileStat);
 static int writeContent(const char *path, off_t st_size, Archive *archive);
 static int appendEnd(Archive *archive);
-static blkcnt_t getNumBlocks(off_t numBytes);
 
 int c_mode(Params *params)
 {
@@ -67,7 +66,7 @@ int append(const char *path, Archive *archive)
 int writeContent(const char *path, off_t st_size, Archive *archive)
 {
 	ArchivedFile file;
-	if (initArchivedFile(&file, path, getNumBlocks(st_size))) {
+	if (initArchivedFile(&file, path, st_size)) {
 		return EXIT_FAILURE;
 	}
 	if (readFile(&file) == SYSCALL_ERR_CODE) {
@@ -89,9 +88,4 @@ int appendEnd(Archive *archive)
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
-}
-
-inline blkcnt_t getNumBlocks(off_t numBytes)
-{
-	return (numBytes - 1) / BLOCKSIZE + 1;
 }

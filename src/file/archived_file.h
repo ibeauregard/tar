@@ -11,7 +11,7 @@ typedef struct s_archived_file {
 	size_t numBlocks;
 } ArchivedFile;
 
-int initArchivedFile(ArchivedFile *file, const char *path, size_t numBlocks);
+int initArchivedFile(ArchivedFile *file, const char *path, size_t st_size);
 int readFile(ArchivedFile *file);
 int writeToArchive(ArchivedFile *file, Archive *archive);
 int closeArchivedFile(ArchivedFile *file);

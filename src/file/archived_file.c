@@ -7,15 +7,15 @@
 
 static void zfill(ArchivedFile *file);
 
-int initArchivedFile(ArchivedFile *file, const char *path, size_t numBlocks)
+int initArchivedFile(ArchivedFile *file, const char *path, size_t st_size)
 {
 	file->fd = open(path, O_RDONLY);
 	if (file->fd == SYSCALL_ERR_CODE) {
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
 	file->path = path;
-	file->buffer = malloc(numBlocks * BLOCKSIZE);
-	file->numBlocks = numBlocks;
+	file->numBlocks = (st_size - 1) / BLOCKSIZE + 1;
+	file->buffer = malloc(file->numBlocks * BLOCKSIZE);
 	zfill(file);
 	return EXIT_SUCCESS;
 }
