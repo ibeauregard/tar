@@ -1,43 +1,45 @@
 #include "archived_file.h"
 #include "tar_header.h"
 #include "unistd.h"
+#include "error.h"
 #include <stdlib.h>
+#include <fcntl.h>
 
-static void zfill(ArchivedFile *buffer);
+static void zfill(ArchivedFile *file);
 
-ArchivedFile *newArchivedFile(const char *path, size_t numBlocks)
+int initArchivedFile(ArchivedFile *file, const char *path, size_t numBlocks)
 {
-	ArchivedFile *file = malloc(sizeof (ArchivedFile));
+	file->fd = open(path, O_RDONLY);
+	if (file->fd == SYSCALL_ERR_CODE) {
+		return error(CANT_OPEN_FILE_ERR, path);
+	}
 	file->path = path;
-	file->buffer = malloc((numBlocks + 1) * BLOCKSIZE);
+	file->buffer = malloc(numBlocks * BLOCKSIZE);
 	file->numBlocks = numBlocks;
 	zfill(file);
-	return file;
+	return EXIT_SUCCESS;
 }
 
-int readFromFd(ArchivedFile *file, int fd)
+int readFile(ArchivedFile *file)
 {
-	return read(fd, file->buffer + BLOCKSIZE, file->numBlocks * BLOCKSIZE);
+	return read(file->fd, file->buffer, file->numBlocks * BLOCKSIZE);
 }
 
-int writeToArchive(ArchivedFile *file, ArchiveFile *archive)
+int writeToArchive(ArchivedFile *file, Archive *archive)
 {
-	return write(archive->fd, file->buffer, (file->numBlocks + 1) * BLOCKSIZE);
+	return write(archive->fd, file->buffer, file->numBlocks * BLOCKSIZE);
 }
 
-void freeArchivedFile(ArchivedFile *file)
+int closeArchivedFile(ArchivedFile *file)
 {
 	free(file->buffer);
-	free(file);
+	return close(file->fd);
 }
 
 void zfill(ArchivedFile *file)
 {
-	size_t i;
-	for (i = 0; i < BLOCKSIZE; i++) {
-		file->buffer[i] = 0;
-	}
-	for (i = file->numBlocks * BLOCKSIZE; i < (file->numBlocks + 1) * BLOCKSIZE; i++) {
+	size_t totalBytes = file->numBlocks * BLOCKSIZE;
+	for (size_t i = (file->numBlocks - 1) * BLOCKSIZE; i < totalBytes; i++) {
 		file->buffer[i] = 0;
 	}
 }
