@@ -1,7 +1,7 @@
 #include "archived_file.h"
-#include "tar_header.h"
+#include "../tar_header.h"
 #include "unistd.h"
-#include "error.h"
+#include "../error/error.h"
 #include <stdlib.h>
 #include <fcntl.h>
 

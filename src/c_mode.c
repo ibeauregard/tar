@@ -3,9 +3,9 @@
 #include "utils/_string.h"
 #include "utils/_stdio.h"
 #include "constants.h"
-#include "archived_file.h"
-#include "archive.h"
-#include "error.h"
+#include "file/archived_file.h"
+#include "file/archive.h"
+#include "error/error.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>

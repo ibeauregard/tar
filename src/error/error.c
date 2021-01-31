@@ -1,6 +1,6 @@
 #include "error.h"
-#include "utils/_string.h"
-#include "utils/_stdio.h"
+#include "../utils/_string.h"
+#include "../utils/_stdio.h"
 #include "stdlib.h"
 #include <unistd.h>
 

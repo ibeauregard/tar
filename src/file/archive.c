@@ -1,8 +1,8 @@
 #include "archive.h"
-#include "utils/_string.h"
+#include "../utils/_string.h"
 #include "fcntl.h"
-#include "constants.h"
-#include "error.h"
+#include "../constants.h"
+#include "../error/error.h"
 #include <unistd.h>
 #include <stdlib.h>
 
