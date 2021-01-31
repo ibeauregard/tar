@@ -1,4 +1,4 @@
-../../my_tar
+my_tar
 *.o
 .idea
 *.tar
