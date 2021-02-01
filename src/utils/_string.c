@@ -42,3 +42,15 @@ char* _strncpy(char* dest, const char* source, size_t num)
 	}
 	return dest;
 }
+
+char* _strcat(char* dest, const char* source)
+{
+	uint i, j;
+	for (i = 0; dest[i]; i++);
+	for (j = 0; source[j]; j++)
+	{
+		dest[i + j] = source[j];
+	}
+	dest[i + j] = 0;
+	return dest;
+}

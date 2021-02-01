@@ -6,11 +6,17 @@
 #include "error/error.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <dirent.h>
 
 #define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
+#define PATH_SEP "/"
+
+typedef struct dirent Dirent;
 
 static int append(const char *path, Archive *archive);
 static int writeHeader(const ArchivedFile *file, Archive *archive);
+static int appendDirectory(const char *dirPath, Archive *archive);
+static char* build_path(char* fullPath, const char* dirPath, const char* name);
 static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
@@ -48,6 +54,9 @@ int append(const char *path, Archive *archive)
 		closeArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
+	if (file.type == DIRTYPE) {
+		return appendDirectory(path, archive);
+	}
 	if (writeContent(&file, archive)) {
 		closeArchivedFile(&file);
 		return EXIT_FAILURE;
@@ -64,6 +73,29 @@ int writeHeader(const ArchivedFile *file, Archive *archive)
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
+}
+
+int appendDirectory(const char *dirPath, Archive *archive)
+{
+	DIR *folder = opendir(dirPath);
+	Dirent *entry;
+	while ((entry = readdir(folder))) {
+		if (!_strcmp(entry->d_name, ".") || !_strcmp(entry->d_name, "..")) {
+			continue;
+		}
+		char fullpath[_strlen(dirPath)
+						+ _strlen(PATH_SEP)
+						+ _strlen(entry->d_name)
+						+ 1];
+		append(build_path(fullpath, dirPath, entry->d_name), archive);
+	}
+	closedir(folder);
+	return EXIT_SUCCESS;
+}
+
+char* build_path(char* fullPath, const char* dirPath, const char* name)
+{
+	return _strcat(_strcat(_strcpy(fullPath, dirPath), PATH_SEP), name);
 }
 
 int writeContent(const ArchivedFile *file, Archive *archive)
