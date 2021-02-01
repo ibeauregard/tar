@@ -29,7 +29,9 @@ int c_mode(Params *params)
 		return cleanupAfterFailure(params);
 	}
 	while (params->filePaths) {
-		if (append(params->filePaths->path, &archive)) return cleanupAfterFailure(params);
+		if (append(params->filePaths->path, &archive)) {
+			return cleanupAfterFailure(params);
+		}
 		PathNode *current = params->filePaths;
 		params->filePaths = params->filePaths->next;
 		free(current);
