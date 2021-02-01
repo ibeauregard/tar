@@ -1,6 +1,10 @@
 #include "tar_header.h"
 #include "utils/_string.h"
+#if defined(__APPLE__)
 #include "utils/sysmacros.h"
+#else
+#include <sys/sysmacros.h>
+#endif
 #include <pwd.h>
 #include <grp.h>
 
