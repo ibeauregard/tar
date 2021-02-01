@@ -70,7 +70,9 @@ void setGid(const ArchivedFile *file, PosixHeader *header)
 
 void setSize(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->size, file->fileStat->st_size, 12);
+	copyOctal(header->size,
+		   file->type != SYMTYPE ? file->fileStat->st_size : 0,
+		   12);
 }
 
 void setMtime(const ArchivedFile *file, PosixHeader *header)
