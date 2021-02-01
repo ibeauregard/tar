@@ -52,7 +52,7 @@ char getFileType(const ArchivedFile *file)
 
 size_t getNumBlocks(const ArchivedFile *file)
 {
-	if ((file->fileStat->st_mode & S_IFMT) == S_IFLNK) {
+	if (file->type != REGTYPE && file->type != AREGTYPE) {
 		return 0;
 	}
 	return file->fileStat->st_size ? (file->fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
