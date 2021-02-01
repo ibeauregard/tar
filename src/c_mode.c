@@ -14,6 +14,7 @@ static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
+static int freeParams(Params *params);
 
 int c_mode(Params *params)
 {
@@ -22,7 +23,7 @@ int c_mode(Params *params)
 		return EXIT_FAILURE;
 	}
 	while (params->filePaths) {
-		if (append(params->filePaths->path, &archive)) return EXIT_FAILURE;
+		if (append(params->filePaths->path, &archive)) return freeParams(params);
 		PathNode *current = params->filePaths;
 		params->filePaths = params->filePaths->next;
 		free(current);
@@ -89,4 +90,14 @@ PosixHeader getZeroFilledPosixHeader()
 {
 	static PosixHeader header;
 	return header;
+}
+
+int freeParams(Params *params)
+{
+	while (params->filePaths) {
+		PathNode *current = params->filePaths;
+		params->filePaths = params->filePaths->next;
+		free(current);
+	}
+	return EXIT_FAILURE;
 }
