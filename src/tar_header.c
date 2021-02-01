@@ -123,8 +123,10 @@ void setGname(const ArchivedFile *file, PosixHeader *header)
 
 void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
-	_itoa(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
+	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
+		_itoa(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
+		_itoa(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
+	}
 }
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
