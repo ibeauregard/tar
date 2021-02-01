@@ -76,7 +76,7 @@ void setGid(const ArchivedFile *file, PosixHeader *header)
 void setSize(const ArchivedFile *file, PosixHeader *header)
 {
 	copyOctal(header->size,
-		   file->type == REGTYPE || file->type == AREGTYPE ? file->fileStat->st_size : 0,
+		   file->type == REGTYPE ? file->fileStat->st_size : 0,
 		   12);
 }
 
