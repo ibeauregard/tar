@@ -13,6 +13,7 @@ static void setGid(const ArchivedFile *file, PosixHeader *header);
 static void setSize(const ArchivedFile *file, PosixHeader *header);
 static void setMtime(const ArchivedFile *file, PosixHeader *header);
 static void setTypeFlag(const ArchivedFile *file, PosixHeader *header);
+static void setMagic(PosixHeader *header);
 static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -24,6 +25,7 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setSize(file, header);
 	setMtime(file, header);
 	setTypeFlag(file, header);
+	setMagic(header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
@@ -82,6 +84,11 @@ void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
 			header->typeflag = FIFOTYPE;
 			break;
 	}
+}
+
+void setMagic(PosixHeader *header)
+{
+	_strcpy(header->magic, TMAGIC);
 }
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
