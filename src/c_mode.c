@@ -10,7 +10,7 @@
 #define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
 
 static int append(const char *path, Archive *archive);
-static int write_header(const ArchivedFile *file, Archive *archive);
+static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
@@ -43,7 +43,7 @@ int append(const char *path, Archive *archive)
 	if (initArchivedFile(&file, path)) {
 		return EXIT_FAILURE;
 	}
-	if (write_header(&file, archive)) {
+	if (writeHeader(&file, archive)) {
 		return EXIT_FAILURE;
 	}
 	if (writeContent(&file, archive)) {
@@ -53,12 +53,13 @@ int append(const char *path, Archive *archive)
 	return EXIT_SUCCESS;
 }
 
-int write_header(const ArchivedFile *file, Archive *archive)
+int writeHeader(const ArchivedFile *file, Archive *archive)
 {
 	PosixHeader header = getZeroFilledPosixHeader();
 	fillHeader(file, &header);
-
-	write(archive->fd, &header, BLOCKSIZE);
+	if (write(archive->fd, &header, BLOCKSIZE) == SYSCALL_ERR_CODE) {
+		return error(CANT_WRITE_ERR, archive->path);
+	}
 	return EXIT_SUCCESS;
 }
 
