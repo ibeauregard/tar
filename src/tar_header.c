@@ -1,5 +1,6 @@
 #include "tar_header.h"
 #include "utils/_string.h"
+#include "utils/sysmacros.h"
 #include <pwd.h>
 #include <grp.h>
 
@@ -19,6 +20,7 @@ static void setMagic(PosixHeader *header);
 static void setVersion(PosixHeader *header);
 static void setUname(const ArchivedFile *file, PosixHeader *header);
 static void setGname(const ArchivedFile *file, PosixHeader *header);
+static void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header);
 static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -34,6 +36,7 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setVersion(header);
 	setUname(file, header);
 	setGname(file, header);
+	setDevMajorDevMinor(file, header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
@@ -77,7 +80,7 @@ void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
 			header->typeflag = REGTYPE;
 			break;
 		case S_IFLNK:
-			header->typeflag = LNKTYPE;
+			header->typeflag = SYMTYPE;
 			break;
 		case S_IFCHR:
 			header->typeflag = CHRTYPE;
@@ -112,6 +115,12 @@ void setUname(const ArchivedFile *file, PosixHeader *header)
 void setGname(const ArchivedFile *file, PosixHeader *header)
 {
 	_strcpy(header->gname, getgrgid(file->fileStat->st_gid)->gr_name);
+}
+
+void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
+{
+	_itoa(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
+	_itoa(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
 }
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
