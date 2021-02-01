@@ -4,7 +4,6 @@
 #include "file/archived_file.h"
 #include "file/archive.h"
 #include "error/error.h"
-#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 

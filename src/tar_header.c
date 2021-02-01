@@ -1,6 +1,5 @@
 #include "tar_header.h"
 #include "utils/_string.h"
-#include <stdio.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -97,12 +96,12 @@ void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
 
 void setMagic(PosixHeader *header)
 {
-	_strcpy(header->magic, TMAGIC);
+	_strncpy(header->magic, TMAGIC, TMAGLEN);
 }
 
 void setVersion(PosixHeader *header)
 {
-	_strcpy(header->version, TVERSION);
+	_strncpy(header->version, TVERSION, TVERSLEN);
 }
 
 void setUname(const ArchivedFile *file, PosixHeader *header)
