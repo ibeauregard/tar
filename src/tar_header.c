@@ -130,20 +130,20 @@ unsigned int computeChecksum(PosixHeader *header)
 {
 	return getByteSum(header->name, 100)
 			+ getByteSum(header->mode, 8)
-			+ getByteSum(header->mode, 8)
-			+ getByteSum(header->mode, 8)
-			+ getByteSum(header->mode, 12)
-			+ getByteSum(header->mode, 12)
+			+ getByteSum(header->uid, 8)
+			+ getByteSum(header->gid, 8)
+			+ getByteSum(header->size, 12)
+			+ getByteSum(header->mtime, 12)
 			+ 7 * ' '
 			+ header->typeflag
-			+ getByteSum(header->mode, 100)
-			+ getByteSum(header->mode, 6)
-			+ getByteSum(header->mode, 2)
-			+ getByteSum(header->mode, 32)
-			+ getByteSum(header->mode, 32)
-			+ getByteSum(header->mode, 8)
-			+ getByteSum(header->mode, 8)
-			+ getByteSum(header->mode, 155);
+			+ getByteSum(header->linkname, 100)
+			+ getByteSum(header->magic, 6)
+			+ getByteSum(header->version, 2)
+			+ getByteSum(header->uname, 32)
+			+ getByteSum(header->gname, 32)
+			+ getByteSum(header->devmajor, 8)
+			+ getByteSum(header->devminor, 8)
+			+ getByteSum(header->prefix, 155);
 }
 
 unsigned int getByteSum(const char *field, unsigned char size)
