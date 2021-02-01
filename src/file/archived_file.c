@@ -13,11 +13,13 @@ int initArchivedFile(ArchivedFile *file, const char *path)
 {
 	Stat *fileStat = malloc(sizeof (Stat));
 	if (lstat(path, fileStat) == SYSCALL_ERR_CODE) {
+		free(fileStat);
 		return error(STAT_ERR, path);
 	}
 	file->fileStat = fileStat;
 	file->fd = open(path, O_RDONLY);
 	if (file->fd == SYSCALL_ERR_CODE) {
+		free(fileStat);
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
 	file->path = path;

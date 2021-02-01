@@ -29,7 +29,7 @@ int c_mode(Params *params)
 		free(current);
 	}
 	if (appendEnd(&archive)) {
-		return EXIT_FAILURE;
+		return cleanupAfterFailure(params);
 	}
 	closeArchive(&archive);
 	return EXIT_SUCCESS;
@@ -45,9 +45,11 @@ int append(const char *path, Archive *archive)
 		return EXIT_FAILURE;
 	}
 	if (writeHeader(&file, archive)) {
+		closeArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
 	if (writeContent(&file, archive)) {
+		closeArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
 	closeArchivedFile(&file);
@@ -67,11 +69,9 @@ int writeHeader(const ArchivedFile *file, Archive *archive)
 int writeContent(const ArchivedFile *file, Archive *archive)
 {
 	if (readFile(file) == SYSCALL_ERR_CODE) {
-		closeArchivedFile(file);
 		return error(CANT_READ_ERR, file->path);
 	}
 	if (writeToArchive(file, archive) == SYSCALL_ERR_CODE) {
-		closeArchivedFile(file);
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
