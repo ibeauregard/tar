@@ -6,6 +6,7 @@
 #include <fcntl.h>
 
 static void zfillLastBlock(ArchivedFile *file);
+static size_t getNumBlocks(ArchivedFile *file);
 
 int initArchivedFile(ArchivedFile *file, const char *path)
 {
@@ -19,10 +20,18 @@ int initArchivedFile(ArchivedFile *file, const char *path)
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
 	file->path = path;
-	file->numBlocks = fileStat->st_size ? (fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
+	file->numBlocks = getNumBlocks(file);
 	file->buffer = malloc(file->numBlocks * BLOCKSIZE);
 	zfillLastBlock(file);
 	return EXIT_SUCCESS;
+}
+
+size_t getNumBlocks(ArchivedFile *file)
+{
+	if ((file->fileStat->st_mode & S_IFMT) == S_IFLNK) {
+		return 0;
+	}
+	return file->fileStat->st_size ? (file->fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
 }
 
 int readFile(const ArchivedFile *file)

@@ -5,10 +5,12 @@
 #else
 #include <sys/sysmacros.h>
 #endif
+#include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
 
-#define NAME_LENGTH 100
+#define NAME_SIZE 100
+#define LINKNAME_SIZE 100
 #define DIGITS "01234567"
 #define OCTAL 8
 #define FILE_MODE_BITS 07777
@@ -19,13 +21,13 @@ static void setUid(const ArchivedFile *file, PosixHeader *header);
 static void setGid(const ArchivedFile *file, PosixHeader *header);
 static void setSize(const ArchivedFile *file, PosixHeader *header);
 static void setMtime(const ArchivedFile *file, PosixHeader *header);
-static void setTypeFlag(const ArchivedFile *file, PosixHeader *header);
+static void setTypeFlagAndLinkName(const ArchivedFile *file, PosixHeader *header);
 static void setMagic(PosixHeader *header);
 static void setVersion(PosixHeader *header);
 static void setUname(const ArchivedFile *file, PosixHeader *header);
 static void setGname(const ArchivedFile *file, PosixHeader *header);
 static void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header);
-static void copyOctal(char *dest, unsigned int num, unsigned char size, unsigned char base);
+static void copyOctal(char *dest, unsigned int num, unsigned char size);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
 {
@@ -35,7 +37,7 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setGid(file, header);
 	setSize(file, header);
 	setMtime(file, header);
-	setTypeFlag(file, header);
+	setTypeFlagAndLinkName(file, header);
 	setMagic(header);
 	setVersion(header);
 	setUname(file, header);
@@ -47,37 +49,37 @@ void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
 {
 	const char *name = file->path;
 	size_t len = _strlen(name);
-	size_t cutoff = len - (len < NAME_LENGTH - 1 ? len : NAME_LENGTH - 1);
+	size_t cutoff = len - (len < NAME_SIZE - 1 ? len : NAME_SIZE - 1);
 	_strncpy(header->prefix, name, cutoff);
 	_strncpy(header->name, name + cutoff, len - cutoff);
 }
 
 void setMode(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->mode, file->fileStat->st_mode & FILE_MODE_BITS, 8, OCTAL);
+	copyOctal(header->mode, file->fileStat->st_mode & FILE_MODE_BITS, 8);
 }
 
 void setUid(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->uid, file->fileStat->st_uid, 8, OCTAL);
+	copyOctal(header->uid, file->fileStat->st_uid, 8);
 }
 
 void setGid(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->gid, file->fileStat->st_gid, 8, OCTAL);
+	copyOctal(header->gid, file->fileStat->st_gid, 8);
 }
 
 void setSize(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->size, file->fileStat->st_size, 12, OCTAL);
+	copyOctal(header->size, file->fileStat->st_size, 12);
 }
 
 void setMtime(const ArchivedFile *file, PosixHeader *header)
 {
-	copyOctal(header->mtime, file->fileStat->st_mtime, 12, OCTAL);
+	copyOctal(header->mtime, file->fileStat->st_mtime, 12);
 }
 
-void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
+void setTypeFlagAndLinkName(const ArchivedFile *file, PosixHeader *header)
 {
 	switch (file->fileStat->st_mode & S_IFMT) {
 		case S_IFREG:
@@ -85,6 +87,7 @@ void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
 			break;
 		case S_IFLNK:
 			header->typeflag = SYMTYPE;
+			readlink(file->path, header->linkname, LINKNAME_SIZE);
 			break;
 		case S_IFCHR:
 			header->typeflag = CHRTYPE;
@@ -124,12 +127,12 @@ void setGname(const ArchivedFile *file, PosixHeader *header)
 void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
 {
 	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
-		copyOctal(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
-		copyOctal(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
+		copyOctal(header->devmajor, major(file->fileStat->st_dev), 8);
+		copyOctal(header->devminor, minor(file->fileStat->st_dev), 8);
 	}
 }
 
-void copyOctal(char *dest, unsigned int num, unsigned char size, unsigned char base)
+void copyOctal(char *dest, unsigned int num, unsigned char size)
 {
 	unsigned char i;
 	for (i = 0; i < size - 1; i++) {
@@ -137,7 +140,7 @@ void copyOctal(char *dest, unsigned int num, unsigned char size, unsigned char b
 	}
 	dest[i] = 0;
 	while (num) {
-		dest[--i] = DIGITS[num % base];
-		num /= base;
+		dest[--i] = DIGITS[num % OCTAL];
+		num /= OCTAL;
 	}
 }
