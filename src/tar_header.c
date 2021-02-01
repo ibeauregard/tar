@@ -98,12 +98,12 @@ void setVersion(PosixHeader *header)
 
 void setUname(const ArchivedFile *file, PosixHeader *header)
 {
-	_strcpy(header->uname, getpwuid(file->fileStat->st_uid)->pw_name);
+	_strncpy(header->uname, getpwuid(file->fileStat->st_uid)->pw_name, 32);
 }
 
 void setGname(const ArchivedFile *file, PosixHeader *header)
 {
-	_strcpy(header->gname, getgrgid(file->fileStat->st_gid)->gr_name);
+	_strncpy(header->gname, getgrgid(file->fileStat->st_gid)->gr_name, 32);
 }
 
 void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
