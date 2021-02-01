@@ -1,7 +1,10 @@
 #include "tar_header.h"
 #include "utils/_string.h"
 #include <stdio.h>
+#include <pwd.h>
+#include <grp.h>
 
+#define NAME_LENGTH 100
 #define DIGITS "01234567"
 #define OCTAL 8
 #define FILE_MODE_BITS 07777
@@ -14,6 +17,9 @@ static void setSize(const ArchivedFile *file, PosixHeader *header);
 static void setMtime(const ArchivedFile *file, PosixHeader *header);
 static void setTypeFlag(const ArchivedFile *file, PosixHeader *header);
 static void setMagic(PosixHeader *header);
+static void setVersion(PosixHeader *header);
+static void setUname(const ArchivedFile *file, PosixHeader *header);
+static void setGname(const ArchivedFile *file, PosixHeader *header);
 static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -26,13 +32,16 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setMtime(file, header);
 	setTypeFlag(file, header);
 	setMagic(header);
+	setVersion(header);
+	setUname(file, header);
+	setGname(file, header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
 {
 	const char *name = file->path;
 	size_t len = _strlen(name);
-	size_t cutoff = len - (len < 99 ? len : 99);
+	size_t cutoff = len - (len < NAME_LENGTH - 1 ? len : NAME_LENGTH - 1);
 	_strncpy(header->prefix, name, cutoff);
 	_strncpy(header->name, name + cutoff, len - cutoff);
 }
@@ -89,6 +98,21 @@ void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
 void setMagic(PosixHeader *header)
 {
 	_strcpy(header->magic, TMAGIC);
+}
+
+void setVersion(PosixHeader *header)
+{
+	_strcpy(header->version, TVERSION);
+}
+
+void setUname(const ArchivedFile *file, PosixHeader *header)
+{
+	_strcpy(header->uname, getpwuid(file->fileStat->st_uid)->pw_name);
+}
+
+void setGname(const ArchivedFile *file, PosixHeader *header)
+{
+	_strcpy(header->gname, getgrgid(file->fileStat->st_gid)->gr_name);
 }
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
