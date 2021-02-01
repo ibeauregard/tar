@@ -19,7 +19,7 @@ int initArchivedFile(ArchivedFile *file, const char *path)
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
 	file->path = path;
-	file->numBlocks = (fileStat->st_size - 1) / BLOCKSIZE + 1;
+	file->numBlocks = fileStat->st_size ? (fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
 	file->buffer = malloc(file->numBlocks * BLOCKSIZE);
 	zfillLastBlock(file);
 	return EXIT_SUCCESS;
