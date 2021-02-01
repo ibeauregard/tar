@@ -12,6 +12,7 @@ static void setUid(const ArchivedFile *file, PosixHeader *header);
 static void setGid(const ArchivedFile *file, PosixHeader *header);
 static void setSize(const ArchivedFile *file, PosixHeader *header);
 static void setMtime(const ArchivedFile *file, PosixHeader *header);
+static void setTypeFlag(const ArchivedFile *file, PosixHeader *header);
 static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -22,6 +23,7 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setGid(file, header);
 	setSize(file, header);
 	setMtime(file, header);
+	setTypeFlag(file, header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
@@ -56,6 +58,30 @@ void setSize(const ArchivedFile *file, PosixHeader *header)
 void setMtime(const ArchivedFile *file, PosixHeader *header)
 {
 	_itoa(header->mtime, file->fileStat->st_mtime, 12, OCTAL);
+}
+
+void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
+{
+	switch (file->fileStat->st_mode & S_IFMT) {
+		case S_IFREG:
+			header->typeflag = REGTYPE;
+			break;
+		case S_IFLNK:
+			header->typeflag = LNKTYPE;
+			break;
+		case S_IFCHR:
+			header->typeflag = CHRTYPE;
+			break;
+		case S_IFBLK:
+			header->typeflag = BLKTYPE;
+			break;
+		case S_IFDIR:
+			header->typeflag = DIRTYPE;
+			break;
+		case S_IFIFO:
+			header->typeflag = FIFOTYPE;
+			break;
+	}
 }
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
