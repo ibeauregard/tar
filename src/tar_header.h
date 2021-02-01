@@ -33,9 +33,9 @@ typedef struct posix_header
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header);
 
-#define TMAGIC   "ustar"        /* ustar and a null */
+#define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6
-#define TVERSION "00"           /* 00 and no null */
+#define TVERSION " "           /* 00 and no null */
 #define TVERSLEN 2
 
 /* Values used in typeflag field.  */

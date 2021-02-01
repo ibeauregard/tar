@@ -123,7 +123,8 @@ void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
 
 void setChecksum(PosixHeader *header)
 {
-	copyOctal(header->chksum, computeChecksum(header), 8);
+	copyOctal(header->chksum, computeChecksum(header), 7);
+    header->chksum[7] = ' ';
 }
 
 unsigned int computeChecksum(PosixHeader *header)
@@ -134,7 +135,7 @@ unsigned int computeChecksum(PosixHeader *header)
 			+ getByteSum(header->gid, 8)
 			+ getByteSum(header->size, 12)
 			+ getByteSum(header->mtime, 12)
-			+ 7 * ' '
+			+ 8 * ' ' // checksum field
 			+ header->typeflag
 			+ getByteSum(header->linkname, 100)
 			+ getByteSum(header->magic, 6)
