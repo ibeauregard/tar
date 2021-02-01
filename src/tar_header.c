@@ -11,7 +11,7 @@ static void setMode(const ArchivedFile *file, PosixHeader *header);
 static void setUid(const ArchivedFile *file, PosixHeader *header);
 static void setGid(const ArchivedFile *file, PosixHeader *header);
 static void setSize(const ArchivedFile *file, PosixHeader *header);
-//static void setMtime(const ArchivedFile *file, PosixHeader *header);
+static void setMtime(const ArchivedFile *file, PosixHeader *header);
 static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -21,7 +21,7 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setUid(file, header);
 	setGid(file, header);
 	setSize(file, header);
-//	setMtime(file, header);
+	setMtime(file, header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
@@ -53,10 +53,10 @@ void setSize(const ArchivedFile *file, PosixHeader *header)
 	_itoa(header->size, file->fileStat->st_size, 12, OCTAL);
 }
 
-//void setMtime(const ArchivedFile *file, PosixHeader *header)
-//{
-//	_itoa(header->size, file->fileStat->st, 12, OCTAL);
-//}
+void setMtime(const ArchivedFile *file, PosixHeader *header)
+{
+	_itoa(header->mtime, file->fileStat->st_mtime, 12, OCTAL);
+}
 
 void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
 {
