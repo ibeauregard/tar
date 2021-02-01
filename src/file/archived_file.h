@@ -3,17 +3,21 @@
 
 #include "archive.h"
 #include <stddef.h>
+#include <sys/stat.h>
+
+typedef struct stat Stat;
 
 typedef struct s_archived_file {
 	const char *path;
 	int fd;
+	Stat *fileStat;
 	char *buffer;
 	size_t numBlocks;
 } ArchivedFile;
 
-int initArchivedFile(ArchivedFile *file, const char *path, size_t st_size);
-int readFile(ArchivedFile *file);
-int writeToArchive(ArchivedFile *file, Archive *archive);
-int closeArchivedFile(ArchivedFile *file);
+int initArchivedFile(ArchivedFile *file, const char *path);
+int readFile(const ArchivedFile *file);
+int writeToArchive(const ArchivedFile *file, Archive *archive);
+int closeArchivedFile(const ArchivedFile *file);
 
 #endif
