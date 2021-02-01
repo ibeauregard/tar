@@ -10,7 +10,6 @@
 #include <grp.h>
 
 #define NAME_SIZE 100
-#define LINKNAME_SIZE 100
 #define DIGITS "01234567"
 #define OCTAL 8
 #define FILE_MODE_BITS 07777
@@ -87,7 +86,7 @@ void setTypeFlagAndLinkName(const ArchivedFile *file, PosixHeader *header)
 			break;
 		case S_IFLNK:
 			header->typeflag = SYMTYPE;
-			readlink(file->path, header->linkname, LINKNAME_SIZE);
+			readlink(file->path, header->linkname, 100);
 			break;
 		case S_IFCHR:
 			header->typeflag = CHRTYPE;
