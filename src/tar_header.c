@@ -25,7 +25,7 @@ static void setVersion(PosixHeader *header);
 static void setUname(const ArchivedFile *file, PosixHeader *header);
 static void setGname(const ArchivedFile *file, PosixHeader *header);
 static void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header);
-static void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base);
+static void copyOctal(char *dest, unsigned int num, unsigned char size, unsigned char base);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
 {
@@ -54,27 +54,27 @@ void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
 
 void setMode(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->mode, file->fileStat->st_mode & FILE_MODE_BITS, 8, OCTAL);
+	copyOctal(header->mode, file->fileStat->st_mode & FILE_MODE_BITS, 8, OCTAL);
 }
 
 void setUid(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->uid, file->fileStat->st_uid, 8, OCTAL);
+	copyOctal(header->uid, file->fileStat->st_uid, 8, OCTAL);
 }
 
 void setGid(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->gid, file->fileStat->st_gid, 8, OCTAL);
+	copyOctal(header->gid, file->fileStat->st_gid, 8, OCTAL);
 }
 
 void setSize(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->size, file->fileStat->st_size, 12, OCTAL);
+	copyOctal(header->size, file->fileStat->st_size, 12, OCTAL);
 }
 
 void setMtime(const ArchivedFile *file, PosixHeader *header)
 {
-	_itoa(header->mtime, file->fileStat->st_mtime, 12, OCTAL);
+	copyOctal(header->mtime, file->fileStat->st_mtime, 12, OCTAL);
 }
 
 void setTypeFlag(const ArchivedFile *file, PosixHeader *header)
@@ -124,12 +124,12 @@ void setGname(const ArchivedFile *file, PosixHeader *header)
 void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
 {
 	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
-		_itoa(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
-		_itoa(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
+		copyOctal(header->devmajor, major(file->fileStat->st_dev), 8, OCTAL);
+		copyOctal(header->devminor, minor(file->fileStat->st_dev), 8, OCTAL);
 	}
 }
 
-void _itoa(char *dest, unsigned int num, unsigned char size, unsigned char base)
+void copyOctal(char *dest, unsigned int num, unsigned char size, unsigned char base)
 {
 	unsigned char i;
 	for (i = 0; i < size - 1; i++) {
