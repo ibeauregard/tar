@@ -1,24 +1,20 @@
 #include "modes.h"
 #include "tar_header.h"
 #include "utils/_string.h"
-#include "utils/_stdio.h"
-#include "constants.h"
 #include "file/archived_file.h"
 #include "file/archive.h"
 #include "error/error.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 
 #define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
 
-typedef struct stat Stat;
-
 static int append(const char *path, Archive *archive);
-//static int write_header(Archive *archive);//, const Stat *fileStat);
-static int writeContent(const char *path, off_t st_size, Archive *archive);
+static int write_header(const ArchivedFile *file, Archive *archive);
+static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
+static PosixHeader getZeroFilledPosixHeader();
 
 int c_mode(Params *params)
 {
@@ -44,40 +40,39 @@ int append(const char *path, Archive *archive)
 	if (!_strcmp(archive->path, path)) {
 		return error(FILE_IS_ARCHIVE_ERR, path);
 	}
-	Stat fileStat;
-	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
-		return error(STAT_ERR, path);
-	}
-//	write_header(archive);//, &fileStat);
-	if (writeContent(path, fileStat.st_size, archive)) {
+	ArchivedFile file;
+	if (initArchivedFile(&file, path)) {
 		return EXIT_FAILURE;
 	}
+	if (write_header(&file, archive)) {
+		return EXIT_FAILURE;
+	}
+	if (writeContent(&file, archive)) {
+		return EXIT_FAILURE;
+	}
+	closeArchivedFile(&file);
 	return EXIT_SUCCESS;
 }
 
-//int write_header(Archive *archiveFile)//, const Stat *fileStat)
-//{
-//	PosixHeader header = {};
-//	write(archiveFile->fd, &header, BLOCKSIZE);
-//	zfill(archiveFile->block);
-//	return EXIT_SUCCESS;
-//}
-
-int writeContent(const char *path, off_t st_size, Archive *archive)
+int write_header(const ArchivedFile *file, Archive *archive)
 {
-	ArchivedFile file;
-	if (initArchivedFile(&file, path, st_size)) {
-		return EXIT_FAILURE;
+	PosixHeader header = getZeroFilledPosixHeader();
+	fillHeader(file, &header);
+
+	write(archive->fd, &header, BLOCKSIZE);
+	return EXIT_SUCCESS;
+}
+
+int writeContent(const ArchivedFile *file, Archive *archive)
+{
+	if (readFile(file) == SYSCALL_ERR_CODE) {
+		closeArchivedFile(file);
+		return error(CANT_READ_ERR, file->path);
 	}
-	if (readFile(&file) == SYSCALL_ERR_CODE) {
-		closeArchivedFile(&file);
-		return error(CANT_READ_ERR, file.path);
-	}
-	if (writeToArchive(&file, archive) == SYSCALL_ERR_CODE) {
-		closeArchivedFile(&file);
+	if (writeToArchive(file, archive) == SYSCALL_ERR_CODE) {
+		closeArchivedFile(file);
 		return error(CANT_WRITE_ERR, archive->path);
 	}
-	closeArchivedFile(&file);
 	return EXIT_SUCCESS;
 }
 
@@ -88,4 +83,10 @@ int appendEnd(Archive *archive)
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
+}
+
+PosixHeader getZeroFilledPosixHeader()
+{
+	static PosixHeader header;
+	return header;
 }
