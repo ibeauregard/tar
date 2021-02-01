@@ -26,6 +26,9 @@ static void setVersion(PosixHeader *header);
 static void setUname(const ArchivedFile *file, PosixHeader *header);
 static void setGname(const ArchivedFile *file, PosixHeader *header);
 static void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header);
+static void setChecksum(PosixHeader *header);
+static unsigned int computeChecksum(PosixHeader *header);
+static unsigned int getByteSum(const char *field, unsigned char size);
 static void copyOctal(char *dest, unsigned int num, unsigned char size);
 
 void fillHeader(const ArchivedFile *file, PosixHeader *header)
@@ -42,6 +45,8 @@ void fillHeader(const ArchivedFile *file, PosixHeader *header)
 	setUname(file, header);
 	setGname(file, header);
 	setDevMajorDevMinor(file, header);
+
+	setChecksum(header);
 }
 
 void setNameAndPrefix(const ArchivedFile *file, PosixHeader *header)
@@ -114,6 +119,40 @@ void setDevMajorDevMinor(const ArchivedFile *file, PosixHeader *header)
 		copyOctal(header->devmajor, major(file->fileStat->st_dev), 8);
 		copyOctal(header->devminor, minor(file->fileStat->st_dev), 8);
 	}
+}
+
+void setChecksum(PosixHeader *header)
+{
+	copyOctal(header->chksum, computeChecksum(header), 8);
+}
+
+unsigned int computeChecksum(PosixHeader *header)
+{
+	return getByteSum(header->name, 100)
+			+ getByteSum(header->mode, 8)
+			+ getByteSum(header->mode, 8)
+			+ getByteSum(header->mode, 8)
+			+ getByteSum(header->mode, 12)
+			+ getByteSum(header->mode, 12)
+			+ 7 * ' '
+			+ header->typeflag
+			+ getByteSum(header->mode, 100)
+			+ getByteSum(header->mode, 6)
+			+ getByteSum(header->mode, 2)
+			+ getByteSum(header->mode, 32)
+			+ getByteSum(header->mode, 32)
+			+ getByteSum(header->mode, 8)
+			+ getByteSum(header->mode, 8)
+			+ getByteSum(header->mode, 155);
+}
+
+unsigned int getByteSum(const char *field, unsigned char size)
+{
+	unsigned int sum = 0;
+	for (unsigned char i = 0; i < size && field[i]; i++) {
+		sum += field[i];
+	}
+	return sum;
 }
 
 void copyOctal(char *dest, unsigned int num, unsigned char size)
