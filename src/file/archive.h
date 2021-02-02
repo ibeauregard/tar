@@ -7,6 +7,6 @@ typedef struct s_archive {
 } Archive;
 
 int initArchive(Archive *archive, const char *archivePath);
-int closeArchive(Archive *archive);
+int destructArchive(Archive *archive);
 
 #endif

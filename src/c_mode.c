@@ -37,7 +37,7 @@ int c_mode(Params *params)
 	if (appendEnd(&archive)) {
 		return EXIT_FAILURE;;
 	}
-	closeArchive(&archive);
+	destructArchive(&archive);
 	return EXIT_SUCCESS;
 }
 
@@ -51,17 +51,19 @@ int handlePath(char *path, Archive *archive)
 		return EXIT_FAILURE;
 	}
 	if (writeHeader(&file, archive)) {
-		closeArchivedFile(&file);
+		destructArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
 	if (file.type == DIRTYPE) {
-		return appendDirectory(&file, archive);
+		int result = appendDirectory(&file, archive);
+		destructArchivedFile(&file);
+		return result;
 	}
 	if (writeContent(&file, archive)) {
-		closeArchivedFile(&file);
+		destructArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
-	closeArchivedFile(&file);
+	destructArchivedFile(&file);
 	return EXIT_SUCCESS;
 }
 

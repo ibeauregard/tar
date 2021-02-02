@@ -89,7 +89,7 @@ int writeToArchive(const ArchivedFile *file, Archive *archive)
 	return write(archive->fd, file->buffer, file->numBlocks * BLOCKSIZE);
 }
 
-int closeArchivedFile(const ArchivedFile *file)
+int destructArchivedFile(const ArchivedFile *file)
 {
 	free(file->fileStat);
 	free(file->buffer);
