@@ -8,7 +8,7 @@
 typedef struct stat Stat;
 
 typedef struct s_archived_file {
-	char *path;
+	const char *path;
 	char type;
 	int fd;
 	Stat *fileStat;
@@ -16,7 +16,7 @@ typedef struct s_archived_file {
 	size_t numBlocks;
 } ArchivedFile;
 
-int initArchivedFile(ArchivedFile *file, char *path);
+int initArchivedFile(ArchivedFile *file, const char *path);
 int readFile(const ArchivedFile *file);
 int writeToArchive(const ArchivedFile *file, Archive *archive);
 int closeArchivedFile(const ArchivedFile *file);
