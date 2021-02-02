@@ -27,7 +27,7 @@ static int handleArgument(char *argument, ParamsWrapper *wrapper);
 static int handleOptions(char* options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
 static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
-static void updateLinks(ParamsWrapper *params, PathNode *node);
+static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int argRequiredError(char option);
 

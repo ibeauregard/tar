@@ -19,24 +19,23 @@ static char* build_path(char* fullPath, const char* dirPath, const char* name);
 static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
-static int cleanupAfterFailure(Params *params);
 
 int c_mode(Params *params)
 {
 	Archive archive;
 	if (initArchive(&archive, params->archivePath)) {
-		return cleanupAfterFailure(params);
+		return EXIT_FAILURE;
 	}
 	while (params->filePaths) {
 		if (handlePath(params->filePaths->path, &archive)) {
-			return cleanupAfterFailure(params);
+			return EXIT_FAILURE;;
 		}
 		PathNode *current = params->filePaths;
 		params->filePaths = params->filePaths->next;
 		free(current);
 	}
 	if (appendEnd(&archive)) {
-		return cleanupAfterFailure(params);
+		return EXIT_FAILURE;;
 	}
 	closeArchive(&archive);
 	return EXIT_SUCCESS;
@@ -122,14 +121,4 @@ PosixHeader getZeroFilledPosixHeader()
 {
 	static PosixHeader header;
 	return header;
-}
-
-int cleanupAfterFailure(Params *params)
-{
-	while (params->filePaths) {
-		PathNode *current = params->filePaths;
-		params->filePaths = params->filePaths->next;
-		free(current);
-	}
-	return EXIT_FAILURE;
 }
