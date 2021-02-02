@@ -2,9 +2,13 @@
 #include "../tar_header.h"
 #include "unistd.h"
 #include "../error/error.h"
+#include "../utils/_string.h"
 #include <stdlib.h>
 #include <fcntl.h>
 
+#define PATH_SEP '/'
+
+static char *getFilePath(ArchivedFile *file, char *path);
 static void zfillLastBlock(ArchivedFile *file);
 static char getFileType(const ArchivedFile *file);
 static size_t getNumBlocks(const ArchivedFile *file);
@@ -22,8 +26,8 @@ int initArchivedFile(ArchivedFile *file, char *path)
 		free(fileStat);
 		return error(CANT_OPEN_FILE_ERR, path);
 	}
-	file->path = path;
 	file->type = getFileType(file);
+	file->path = getFilePath(file, path);
 	file->numBlocks = getNumBlocks(file);
 	file->buffer = malloc(file->numBlocks * BLOCKSIZE);
 	zfillLastBlock(file);
@@ -50,6 +54,23 @@ char getFileType(const ArchivedFile *file)
 	}
 }
 
+char* getFilePath(ArchivedFile *file, char *path)
+{
+	unsigned char len = _strlen(path);
+	char *newPath = malloc(len + 2);
+	_strcpy(newPath, path);
+	if (file->type != DIRTYPE) {
+		return newPath;
+	}
+	unsigned char numSlashes;
+	for (numSlashes = 0; numSlashes < len && path[len - numSlashes - 1] == PATH_SEP; numSlashes++);
+	if (numSlashes == 0) {
+		newPath[len] = PATH_SEP;
+	}
+	newPath[len - numSlashes + 1] = 0;
+	return newPath;
+}
+
 size_t getNumBlocks(const ArchivedFile *file)
 {
 	if (file->type != REGTYPE) {
@@ -72,6 +93,7 @@ int closeArchivedFile(const ArchivedFile *file)
 {
 	free(file->fileStat);
 	free(file->buffer);
+	free(file->path);
 	return close(file->fd);
 }
 

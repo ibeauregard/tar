@@ -8,7 +8,7 @@
 typedef struct stat Stat;
 
 typedef struct s_archived_file {
-	const char *path;
+	char *path;
 	char type;
 	int fd;
 	Stat *fileStat;
