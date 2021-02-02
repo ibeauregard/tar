@@ -13,7 +13,7 @@
 
 typedef struct dirent Dirent;
 
-static int append(const char *path, Archive *archive);
+static int handlePath(const char *path, Archive *archive);
 static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int appendDirectory(const char *dirPath, Archive *archive);
 static char* build_path(char* fullPath, const char* dirPath, const char* name);
@@ -29,7 +29,7 @@ int c_mode(Params *params)
 		return cleanupAfterFailure(params);
 	}
 	while (params->filePaths) {
-		if (append(params->filePaths->path, &archive)) {
+		if (handlePath(params->filePaths->path, &archive)) {
 			return cleanupAfterFailure(params);
 		}
 		PathNode *current = params->filePaths;
@@ -43,7 +43,7 @@ int c_mode(Params *params)
 	return EXIT_SUCCESS;
 }
 
-int append(const char *path, Archive *archive)
+int handlePath(const char *path, Archive *archive)
 {
 	if (!_strcmp(archive->path, path)) {
 		return error(FILE_IS_ARCHIVE_ERR, path);
@@ -89,7 +89,7 @@ int appendDirectory(const char *dirPath, Archive *archive)
 						+ _strlen(PATH_SEP)
 						+ _strlen(entry->d_name)
 						+ 1];
-		append(build_path(fullpath, dirPath, entry->d_name), archive);
+		handlePath(build_path(fullpath, dirPath, entry->d_name), archive);
 	}
 	closedir(folder);
 	return EXIT_SUCCESS;
