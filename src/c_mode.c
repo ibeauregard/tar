@@ -13,7 +13,7 @@
 
 typedef struct dirent Dirent;
 
-static int handlePath(const char *path, Archive *archive);
+static int handlePath(char *path, Archive *archive);
 static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int appendDirectory(const char *dirPath, Archive *archive);
 static char* build_path(char* fullPath, const char* dirPath, const char* name);
@@ -43,7 +43,7 @@ int c_mode(Params *params)
 	return EXIT_SUCCESS;
 }
 
-int handlePath(const char *path, Archive *archive)
+int handlePath(char *path, Archive *archive)
 {
 	if (!_strcmp(archive->path, path)) {
 		return error(FILE_IS_ARCHIVE_ERR, path);
