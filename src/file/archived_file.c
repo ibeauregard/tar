@@ -9,7 +9,7 @@ static void zfillLastBlock(ArchivedFile *file);
 static char getFileType(const ArchivedFile *file);
 static size_t getNumBlocks(const ArchivedFile *file);
 
-int initArchivedFile(ArchivedFile *file, const char *path)
+int initArchivedFile(ArchivedFile *file, char *path)
 {
 	Stat *fileStat = malloc(sizeof (Stat));
 	if (lstat(path, fileStat) == SYSCALL_ERR_CODE) {
