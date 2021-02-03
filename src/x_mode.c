@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <fcntl.h>            // For open
 #include <unistd.h>           // For read, STDERR_FILENO
-// #include <errno.h>            // For strerror
-#include <string.h>           // For strerror
+// #include <errno.h>            // For strerror?
+// #include <string.h>           // For strerror
 
 #include "tar_header.h"
 #include "utils/_string.h"    // For _strlen
@@ -18,26 +18,42 @@ typedef struct s_ParsedTar {
 static ParsedTar *parseTar(char *archivePath);
 static ParsedTar *newParsedTar();
 static int checkEndOfArchive(int archivefd);
-static int addNode(ParsedTar *headNode, ParsedTar *lastNode);
-static int parseHeader(int archivefd, PosixHeader *header);
+static int addNode(ParsedTar **headNode, ParsedTar **lastNode);
+static int parseHeader(int archivefd, ParsedTar *lastNode);
 static int parseContents(int archivefd, ParsedTar *nextNode);
+static void printParsedTar(ParsedTar *parsedTar);
 
 int x_mode(Params *params)
 {
 	ParsedTar *parsedTar = parseTar(params->archivePath);
 	(void) parsedTar;
+	printParsedTar(parsedTar);
 	// If no -f arguments, tar will extract the whole tar
 	// otherwise will extract only the specified files
-	/*
 	if (!params->filePaths) {
 		extractAllFiles(parsedTar);
-	} else {
+	} 
+	/*
+	else {
 		extractSomeFiles(parsedTar, params);
 
 	}
 	freeParsedTar(parsedTar);
 	*/
 	return EXIT_SUCCESS;
+}
+
+/* Function: Prints out contents of ParsedTar for debugging
+ * -------------------------------------------------------
+ */
+static void printParsedTar(ParsedTar *parsedTar)
+{
+	while (parsedTar) {
+		printf("name: %s\n", parsedTar->header->name);
+		write(1, parsedTar->contents, BLOCKSIZE);
+		printf("\n");
+		parsedTar = parsedTar->next;
+	}
 }
 
 /* Function: Parses .tar archive into struct ParsedTar for individual files
@@ -52,17 +68,26 @@ static ParsedTar *parseTar(char *archivePath)
 	int endOfArchive = 0;
 	ParsedTar *headNode = NULL; 
 	ParsedTar *lastNode = headNode;
-	int result;
 	do {
-		if ((result = checkEndOfArchive(archivefd)))
+		if (checkEndOfArchive(archivefd))
 			break;
-		if (addNode(headNode, lastNode) == -1)
+		if (addNode(&headNode, &lastNode) == -1)
 			break;
-		parseHeader(archivefd, lastNode->header);
+		parseHeader(archivefd, lastNode);
 		parseContents(archivefd, lastNode);
 	} while (!endOfArchive);
-	printf("result: %d\n", result);
 	return headNode;
+}
+
+static ParsedTar *newParsedTar() 
+{
+	ParsedTar *newParsedTar = malloc(sizeof(ParsedTar));
+	if (!newParsedTar)
+		return NULL;
+	newParsedTar->header = NULL;
+	newParsedTar->contents = NULL;
+	newParsedTar->next = NULL;
+	return newParsedTar;
 }
 
 /* Function: Checks if next BLOCKSIZE * 2 bytes are null
@@ -71,15 +96,6 @@ static ParsedTar *parseTar(char *archivePath)
  * After checking, use lseek to return fildes pointer to where it was 
  * before being checked so that parseHeader and parseContent work.
  */ 
-static ParsedTar *newParsedTar() 
-{
-	ParsedTar *newParsedTar = malloc(sizeof(ParsedTar));
-	if (!newParsedTar)
-		return NULL;
-	newParsedTar->next = NULL;
-	return newParsedTar;
-}
-
 static int checkEndOfArchive(int archivefd) 
 {
 	char nextTwoBlocks[BLOCKSIZE * 2 + 1] = { '\0' };
@@ -98,31 +114,41 @@ static int checkEndOfArchive(int archivefd)
 	return 1;
 }
 
-static int addNode(ParsedTar *headNode, ParsedTar *lastNode)
+/* Function: Adds new ParsedTar node to the existing linked list
+ * -------------------------------------------------------------
+ * @**headNode: Address of the pointer to the first node
+ * @**lastNode: Address to the pointer to the last node
+ * If there are no nodes, point headNode and lastNode to new node.
+ * Otherwise, do nothing with headNode and link new node to lastNode.
+ */ 
+static int addNode(ParsedTar **headNode, ParsedTar **lastNode)
 {
 	ParsedTar *nextNode = newParsedTar();
 	if (!nextNode)
 		return -1;
-	if (headNode == NULL) {
-		headNode = lastNode = nextNode;
+	if (*headNode == NULL) {
+		*headNode = *lastNode = nextNode;
 	} else {
-		lastNode->next = nextNode;
-		lastNode = lastNode->next;
+		(*lastNode)->next = nextNode;
+		*lastNode = (*lastNode)->next;
 	}
 	return 0;
 }
 
-static int parseHeader(int archivefd, PosixHeader *header) 
+/* Function: Parses header in .tar file and puts it in PosixHeader struct
+ * ----------------------------------------------------------------------
+ */
+static int parseHeader(int archivefd, ParsedTar *lastNode) 
 {
+	PosixHeader *header = malloc(sizeof(PosixHeader));
+	lastNode->header = header;
 	char nextBlock[BLOCKSIZE + 1] = { '\0' };
 	int bytesRead = read(archivefd, nextBlock, BLOCKSIZE);
-	// First check that we can read BLOCKSIZE bytes from fildes
 	if (bytesRead < BLOCKSIZE) {
 		dprintf(STDERR_FILENO, "Error: Cannot read BLOCKSIZE bytes\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
-	// If we can read BLOCKSIZE bytes, restart from beginning and parse
 	lseek(archivefd, -bytesRead, SEEK_CUR);
 	bytesRead = 0;
 	bytesRead += read(archivefd, header->name, 100);
@@ -145,7 +171,8 @@ static int parseHeader(int archivefd, PosixHeader *header)
 	return 0;
 } 
 
-static int _isdigit(char d) {
+static int _isdigit(int d) 
+{
 	if (d < '0' || d > '9')
 		return 0;
 	return 1;
@@ -156,7 +183,7 @@ static int getValueOfDigit(char d, int base)
 	if (base > 35 || base < 1)
 		return -1;
 	else {
-		if (_isdigit(d))
+		if (_isdigit((int) d))
 			return d - '0';
 		if ((d >= 'a' && d <= 'a' + base - 10))
 			return d - 'a';
@@ -193,22 +220,40 @@ static long _strtol(const char *restrict str, char **restrict endptr, int base)
 
 static int parseContents(int archivefd, ParsedTar *nextNode) 
 {
-	(void) archivefd;
 	long size = _strtol(nextNode->header->size, NULL, 8);
-	printf("%ld\n", size);
+	if (size == 0)
+		return 0;
+	long blockCount = size / (BLOCKSIZE + 1) + 1;
+	char *contents = calloc(BLOCKSIZE * (int) blockCount, sizeof(char));
+	nextNode->contents = contents;
+	int bytesRead = read(archivefd, nextNode->contents, BLOCKSIZE * blockCount);
+	// printf("name: %s\n", nextNode->header->name);
+	// write(1, nextNode->contents, BLOCKSIZE * blockCount);
+	// First check that we can read BLOCKSIZE bytes from fildes
+	if (bytesRead < BLOCKSIZE * blockCount) {
+		dprintf(STDERR_FILENO, "Error: Cannot read contents\n");
+		lseek(archivefd, -bytesRead, SEEK_CUR);
+		return -1;
+	}
 	return 0;
 }
 
-// /* Function: Extract all files in tar archive
-//  * ------------------------------------------
-//  */
-// static int extractAllFiles(ParsedTar *parsedTar) {
-// 	while (parsedTar) {
-// 		extractFileOrDir(parsedTar);
-// 		parsedTar = parsedTar->next;
-// 	}
-// }
-// 
+/* Function: Extract all files in tar archive
+ * ------------------------------------------
+ */
+static int extractAllFiles(ParsedTar *parsedTar) {
+	while (parsedTar) {
+		getFileType(parsedTar);
+		parsedTar = parsedTar->next;
+	}
+}
+
+static int getFileType(parsedTar) 
+{
+	char *mode = parsedTar->header->mode;
+
+}
+
 // /* Function: Extract only the specified files in *params
 //  * -----------------------------------------------------
 //  * If extracting a nested file, must be in the form "dirName/fileName".
@@ -231,13 +276,10 @@ static int parseContents(int archivefd, ParsedTar *nextNode)
 // 		char *parsedName = parsedTar->header->name;
 // 		char *pathName = current->path;
 // 		if (!_strncmp(parsedName, pathName, _strlen(pathName))
-// 			extractFileOrDir(parsedTar);
+// 			extractFile(parsedTar);
 // 		parsedTar = parsedTar->next;
 // 	}
 // }
-// 
-// static int extractFileOrDir(ParsedTar *parsedTar) {
-// 	createFile()
-// 	changePermissions()
-// 	writeFile()
-// }
+
+
+
