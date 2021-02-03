@@ -1,11 +1,11 @@
 #include "params.h"
-#include "utils/_string.h"
-#include "utils/_stdio.h"
+#include "../utils/_string.h"
+#include "../utils/_stdio.h"
 #include "path_node.h"
+#include "../constants.h"
 #include <stdlib.h>
 #include <unistd.h>
 
-#define STDOUT "-"
 #define OPTION_PREFIX '-'
 #define SEVERAL_OPTION_ERR_MESSAGE "my_tar: You may not specify more than one '-ctrux' option\n"
 #define INVALID_OPTION_ERR_MESSAGE "my_tar: invalid option -- '%c'\n"
@@ -27,7 +27,7 @@ static int handleArgument(char *argument, ParamsWrapper *wrapper);
 static int handleOptions(char* options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
 static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
-static void updateLinks(ParamsWrapper *params, PathNode *node);
+static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int argRequiredError(char option);
 
@@ -54,7 +54,7 @@ void initializeWrapper(ParamsWrapper *wrapper, Params *params)
 void initialize(Params *params)
 {
 	params->mode = UNDEFINED;
-	params->archivePath = STDOUT;
+	params->archivePath = STDOUT_PATH;
 	params->filePaths = NULL;
 }
 
@@ -106,7 +106,7 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 
 int setMode(Mode mode, ParamsWrapper *wrapper, char *options)
 {
-	if (wrapper->params->mode) {
+	if (wrapper->params->mode && wrapper->params->mode != mode) {
 		_dprintf(STDERR_FILENO, "%s", SEVERAL_OPTION_ERR_MESSAGE);
 		return EXIT_FAILURE;
 	}
@@ -137,7 +137,7 @@ int validate(const ParamsWrapper *wrapper)
 		_dprintf(STDERR_FILENO, "%s", EMPTY_ARCHIVE_CREATION_ERR_MESSAGE);
 		return EXIT_FAILURE;
 	}
-	if ((params->mode == R || params->mode == U) && !_strcmp(params->archivePath, STDOUT)) {
+	if ((params->mode == R || params->mode == U) && !_strcmp(params->archivePath, STDOUT_PATH)) {
 		_dprintf(STDERR_FILENO, "%s", OPTION_INCOMPATIBILITY_ERR_MESSAGE);
 		return EXIT_FAILURE;
 	}

@@ -12,8 +12,6 @@
 #define NULL_STRING_PLACEHOLDER "(null)"
 #define FLUSH_TRIGGER '\n'
 
-#ifndef STRUCT_OUTPUT_BUFFER
-#define STRUCT_OUTPUT_BUFFER
 typedef struct s_output_buffer
 {
 	unsigned short index;
@@ -21,7 +19,6 @@ typedef struct s_output_buffer
 	char array[BUFSIZ];
 	int fd;
 } output_buffer;
-#endif
 
 static int _vdprintf(int fd, const char* restrict format, va_list* args);
 static const char* handle_format_char(const char* restrict format, va_list* args, output_buffer* buffer);

@@ -2,7 +2,7 @@
 #define PARAMS_H
 
 #include "path_node.h"
-#include "mode.h"
+#include "../mode.h"
 
 typedef struct s_params
 {
