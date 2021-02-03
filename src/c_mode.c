@@ -13,10 +13,11 @@
 typedef struct dirent Dirent;
 
 static int handlePath(char *path, Archive *archive);
+static int writeEntry(const ArchivedFile *file, Archive *archive);
 static int writeHeader(const ArchivedFile *file, Archive *archive);
+static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendDirectory(const ArchivedFile *dir, Archive *archive);
 static char* build_path(char* fullPath, const char* dirPath, const char* name);
-static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
 
@@ -50,17 +51,27 @@ int handlePath(char *path, Archive *archive)
 	if (initArchivedFile(&file, path)) {
 		return EXIT_FAILURE;
 	}
-	if (writeHeader(&file, archive)) {
-		destructArchivedFile(&file);
-		return EXIT_FAILURE;
+	int status = EXIT_SUCCESS;
+	if (writeEntry(&file, archive)) {
+		status = EXIT_FAILURE;
 	}
-	if (writeContent(&file, archive)) {
-		destructArchivedFile(&file);
-		return EXIT_FAILURE;
-	}
-	int result = appendDirectory(&file, archive);
 	destructArchivedFile(&file);
-	return result;
+	return status;
+}
+
+int writeEntry(const ArchivedFile *file, Archive *archive)
+{
+	if (writeHeader(file, archive)) {
+		return EXIT_FAILURE;
+	}
+	if (writeContent(file, archive)) {
+		return EXIT_FAILURE;
+	}
+	int status = EXIT_SUCCESS;
+	if (file->type == DIRTYPE) {
+		status = appendDirectory(file, archive);
+	}
+	return status;
 }
 
 int writeHeader(const ArchivedFile *file, Archive *archive)
@@ -73,11 +84,19 @@ int writeHeader(const ArchivedFile *file, Archive *archive)
 	return EXIT_SUCCESS;
 }
 
+int writeContent(const ArchivedFile *file, Archive *archive)
+{
+	if (readFile(file) == SYSCALL_ERR_CODE) {
+		return error(CANT_READ_ERR, file->path);
+	}
+	if (writeToArchive(file, archive) == SYSCALL_ERR_CODE) {
+		return error(CANT_WRITE_ERR, archive->path);
+	}
+	return EXIT_SUCCESS;
+}
+
 int appendDirectory(const ArchivedFile *dir, Archive *archive)
 {
-	if (dir->type != DIRTYPE) {
-		return EXIT_SUCCESS;
-	}
 	DIR *folder = opendir(dir->path);
 	Dirent *entry;
 	while ((entry = readdir(folder))) {
@@ -98,17 +117,6 @@ int appendDirectory(const ArchivedFile *dir, Archive *archive)
 char* build_path(char* fullPath, const char* dirPath, const char* name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
-}
-
-int writeContent(const ArchivedFile *file, Archive *archive)
-{
-	if (readFile(file) == SYSCALL_ERR_CODE) {
-		return error(CANT_READ_ERR, file->path);
-	}
-	if (writeToArchive(file, archive) == SYSCALL_ERR_CODE) {
-		return error(CANT_WRITE_ERR, archive->path);
-	}
-	return EXIT_SUCCESS;
 }
 
 int appendEnd(Archive *archive)
