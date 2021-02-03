@@ -29,11 +29,10 @@ int my_tar(int n_arguments, char **arguments)
 			status = x_mode(&params);
 			break;
 		default:
-			status = EXIT_FAILURE;
-			_dprintf(STDERR_FILENO, "%s\n", PARSE_ERROR_MESSAGE);
+			status = error("%s", PARSE_ERROR_MESSAGE);
 	}
 	if (status) {
-		_dprintf(STDERR_FILENO, "%s", PREVIOUS_ERROR_MESSAGE);
+		error("%s", PREVIOUS_ERROR_MESSAGE);
 		return cleanupAfterFailure(&params);
 	}
 	return EXIT_SUCCESS;
