@@ -29,17 +29,16 @@ int c_mode(Params *params)
 	}
 	while (params->filePaths) {
 		if (handlePath(params->filePaths->path, &archive)) {
+			finalizeArchive(&archive);
 			return EXIT_FAILURE;;
 		}
 		PathNode *current = params->filePaths;
 		params->filePaths = params->filePaths->next;
 		free(current);
 	}
-	if (appendEnd(&archive)) {
-		return EXIT_FAILURE;;
-	}
+	int status = appendEnd(&archive);
 	finalizeArchive(&archive);
-	return EXIT_SUCCESS;
+	return status;
 }
 
 int handlePath(char *path, Archive *archive)
