@@ -5,9 +5,6 @@
 #include "modes.h"
 #include "error/error.h"
 
-#define PARSE_ERROR_MESSAGE "my_tar: Internal error: Failed to parse mode in params.c\n"
-#define PREVIOUS_ERROR_MESSAGE "my_tar: Exiting with failure status due to previous errors\n"
-
 int my_tar(int n_arguments, char **arguments)
 {
 	Params params;
