@@ -9,27 +9,22 @@
 #include "utils/_string.h"    // For _strlen
 #include "utils/_stdlib.h"    // For _strtol
 #include "modes.h"
+#include "tar_node.h"
 
-typedef struct s_ParsedTar {
-	PosixHeader *header;
-	char *contents;
-	struct s_ParsedTar *next;
-} ParsedTar;
-
-static ParsedTar *parseTar(char *archivePath);
-static ParsedTar *newParsedTar();
+static TarNode *parseTar(char *archivePath);
+static TarNode *newParsedTar();
 static int checkEndOfArchive(int archivefd);
-static int addNode(ParsedTar **headNode, ParsedTar **lastNode);
-static int parseHeader(int archivefd, ParsedTar *lastNode);
-static int parseContents(int archivefd, ParsedTar *nextNode);
-static void printParsedTar(ParsedTar *parsedTar);
+static int addNode(TarNode **headNode, TarNode **lastNode);
+static int parseHeader(int archivefd, TarNode *lastNode);
+static int parseContents(int archivefd, TarNode *nextNode);
+static void printParsedTar(TarNode *parsedTar);
 
-static int extractAllFiles(ParsedTar *parsedTar);
-static void createFile(ParsedTar *parsedTar);
+static int extractAllFiles(TarNode *parsedTar);
+static void createFile(TarNode *parsedTar);
 
 int x_mode(Params *params)
 {
-	ParsedTar *parsedTar = parseTar(params->archivePath);
+	TarNode *parsedTar = parseTar(params->archivePath);
 	(void) parsedTar;
 	printParsedTar(parsedTar);
 	// If no -f arguments, tar will extract the whole tar
@@ -47,10 +42,10 @@ int x_mode(Params *params)
 	return EXIT_SUCCESS;
 }
 
-/* Function: Prints out contents of ParsedTar for debugging
+/* Function: Prints out contents of TarNode for debugging
  * -------------------------------------------------------
  */
-static void printParsedTar(ParsedTar *parsedTar)
+static void printParsedTar(TarNode *parsedTar)
 {
 	while (parsedTar) {
 		printf("name: %s\n", parsedTar->header->name);
@@ -60,18 +55,18 @@ static void printParsedTar(ParsedTar *parsedTar)
 	}
 }
 
-/* Function: Parses .tar archive into struct ParsedTar for individual files
+/* Function: Parses .tar archive into struct TarNode for individual files
  * ------------------------------------------------------------------------
  * parsedTar() parses all the contents of a tar archive and holds it in a  
- * ParsedTar structure. Each ParsedTar struct holds the header and contents 
- * of a single file along with a pointer to the next ParsedTar.
+ * TarNode structure. Each TarNode struct holds the header and contents
+ * of a single file along with a pointer to the next TarNode.
  */ 
-static ParsedTar *parseTar(char *archivePath)
+static TarNode *parseTar(char *archivePath)
 {
 	int archivefd = open(archivePath, O_RDONLY);
 	int endOfArchive = 0;
-	ParsedTar *headNode = NULL; 
-	ParsedTar *lastNode = headNode;
+	TarNode *headNode = NULL;
+	TarNode *lastNode = headNode;
 	do {
 		if (checkEndOfArchive(archivefd))
 			break;
@@ -83,9 +78,9 @@ static ParsedTar *parseTar(char *archivePath)
 	return headNode;
 }
 
-static ParsedTar *newParsedTar() 
+static TarNode *newParsedTar()
 {
-	ParsedTar *newParsedTar = malloc(sizeof(ParsedTar));
+	TarNode *newParsedTar = malloc(sizeof(TarNode));
 	if (!newParsedTar)
 		return NULL;
 	newParsedTar->header = NULL;
@@ -118,16 +113,16 @@ static int checkEndOfArchive(int archivefd)
 	return 1;
 }
 
-/* Function: Adds new ParsedTar node to the existing linked list
+/* Function: Adds new TarNode node to the existing linked list
  * -------------------------------------------------------------
  * @**headNode: Address of the pointer to the first node
  * @**lastNode: Address to the pointer to the last node
  * If there are no nodes, point headNode and lastNode to new node.
  * Otherwise, do nothing with headNode and link new node to lastNode.
  */ 
-static int addNode(ParsedTar **headNode, ParsedTar **lastNode)
+static int addNode(TarNode **headNode, TarNode **lastNode)
 {
-	ParsedTar *nextNode = newParsedTar();
+	TarNode *nextNode = newParsedTar();
 	if (!nextNode)
 		return -1;
 	if (*headNode == NULL) {
@@ -142,7 +137,7 @@ static int addNode(ParsedTar **headNode, ParsedTar **lastNode)
 /* Function: Parses header in .tar file and puts it in PosixHeader struct
  * ----------------------------------------------------------------------
  */
-static int parseHeader(int archivefd, ParsedTar *lastNode) 
+static int parseHeader(int archivefd, TarNode *lastNode)
 {
 	PosixHeader *header = malloc(sizeof(PosixHeader));
 	lastNode->header = header;
@@ -174,7 +169,7 @@ static int parseHeader(int archivefd, ParsedTar *lastNode)
 	lseek(archivefd, BLOCKSIZE - bytesRead, SEEK_CUR);
 	return 0;
 } 
-static int parseContents(int archivefd, ParsedTar *nextNode) 
+static int parseContents(int archivefd, TarNode *nextNode)
 {
 	long size = _strtol(nextNode->header->size, NULL, 8);
 	if (size == 0)
@@ -197,7 +192,7 @@ static int parseContents(int archivefd, ParsedTar *nextNode)
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
-static int extractAllFiles(ParsedTar *parsedTar) 
+static int extractAllFiles(TarNode *parsedTar)
 {
 	while (parsedTar) {
 		createFile(parsedTar);
@@ -206,7 +201,7 @@ static int extractAllFiles(ParsedTar *parsedTar)
 	return 0;
 }
 
-static void createFile(ParsedTar *parsedTar)
+static void createFile(TarNode *parsedTar)
 {
 	char mode = parsedTar->header->typeflag;
 	switch (mode) {
@@ -233,7 +228,7 @@ static void createFile(ParsedTar *parsedTar)
 //  * If a directory or nested directory is specified e.g. "dirName/dirName",
 //  * all nested directories and files will be extracted too.
 //  */
-// static int extractSomeFiles(ParsedTar *parsedTar, Params *params) {
+// static int extractSomeFiles(TarNode *parsedTar, Params *params) {
 // 	PathNode *pathNode = params->filePaths;
 // 	while (pathNode) {
 // 		PathNode *current = pathNode;
@@ -244,7 +239,7 @@ static void createFile(ParsedTar *parsedTar)
 // 	return EXIT_SUCCESS;
 // }
 // 
-// static int findThenExtract(ParsedTar *parsedTar, PathNode *current) {
+// static int findThenExtract(TarNode *parsedTar, PathNode *current) {
 // 	while (parsedTar) {
 // 		char *parsedName = parsedTar->header->name;
 // 		char *pathName = current->path;
