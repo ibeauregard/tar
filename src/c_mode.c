@@ -16,7 +16,7 @@ static int handlePath(char *path, Archive *archive);
 static int writeEntry(const ArchivedFile *file, Archive *archive);
 static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int writeContent(const ArchivedFile *file, Archive *archive);
-static int appendDirectory(const ArchivedFile *dir, Archive *archive);
+static int appendDirContent(const ArchivedFile *dir, Archive *archive);
 static char* build_path(char* fullPath, const char* dirPath, const char* name);
 static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
@@ -68,7 +68,7 @@ int writeEntry(const ArchivedFile *file, Archive *archive)
 		return EXIT_FAILURE;
 	}
 	if (file->type == DIRTYPE) {
-		return appendDirectory(file, archive);
+		return appendDirContent(file, archive);
 	}
 	return EXIT_SUCCESS;
 }
@@ -94,7 +94,7 @@ int writeContent(const ArchivedFile *file, Archive *archive)
 	return EXIT_SUCCESS;
 }
 
-int appendDirectory(const ArchivedFile *dir, Archive *archive)
+int appendDirContent(const ArchivedFile *dir, Archive *archive)
 {
 	DIR *folder = opendir(dir->path);
 	Dirent *entry;
