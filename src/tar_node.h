@@ -1,10 +1,10 @@
 #ifndef TAR_NODE_H
 #define TAR_NODE_H
 
-typedef struct s_ParsedTar {
+typedef struct s_TarNode {
 	PosixHeader *header;
 	char *contents;
-	struct s_ParsedTar *next;
+	struct s_TarNode *next;
 } TarNode;
 
 #endif
