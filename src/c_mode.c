@@ -54,17 +54,13 @@ int handlePath(char *path, Archive *archive)
 		destructArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
-	if (file.type == DIRTYPE) {
-		int result = appendDirectory(&file, archive);
-		destructArchivedFile(&file);
-		return result;
-	}
 	if (writeContent(&file, archive)) {
 		destructArchivedFile(&file);
 		return EXIT_FAILURE;
 	}
+	int result = appendDirectory(&file, archive);
 	destructArchivedFile(&file);
-	return EXIT_SUCCESS;
+	return result;
 }
 
 int writeHeader(const ArchivedFile *file, Archive *archive)
@@ -79,6 +75,9 @@ int writeHeader(const ArchivedFile *file, Archive *archive)
 
 int appendDirectory(const ArchivedFile *dir, Archive *archive)
 {
+	if (dir->type != DIRTYPE) {
+		return EXIT_SUCCESS;
+	}
 	DIR *folder = opendir(dir->path);
 	Dirent *entry;
 	while ((entry = readdir(folder))) {

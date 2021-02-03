@@ -81,6 +81,9 @@ size_t getNumBlocks(const ArchivedFile *file)
 
 int readFile(const ArchivedFile *file)
 {
+	if (file->numBlocks == 0) {
+		return EXIT_SUCCESS;
+	}
 	return read(file->fd, file->buffer, file->numBlocks * BLOCKSIZE);
 }
 
