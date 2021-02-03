@@ -21,7 +21,7 @@ int initArchive(Archive *archive, const char *archivePath)
 	return EXIT_SUCCESS;
 }
 
-int destructArchive(Archive *archive)
+int finalizeArchive(Archive *archive)
 {
 	return close(archive->fd);
 }

@@ -38,7 +38,7 @@ int c_mode(Params *params)
 	if (appendEnd(&archive)) {
 		return EXIT_FAILURE;;
 	}
-	destructArchive(&archive);
+	finalizeArchive(&archive);
 	return EXIT_SUCCESS;
 }
 
