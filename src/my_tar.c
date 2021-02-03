@@ -1,17 +1,15 @@
 #include "utils/_stdio.h"
-#include "params.h"
+#include "argparsing/params.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include "modes.h"
-
-#define PARSE_ERROR_MESSAGE "my_tar: Internal error: Failed to parse mode in params.c\n"
-#define PREVIOUS_ERROR_MESSAGE "my_tar: Exiting with failure status due to previous errors\n"
+#include "error/error.h"
 
 int my_tar(int n_arguments, char **arguments)
 {
 	Params params;
 	if (parseArguments(n_arguments, arguments, &params)) {
-		return EXIT_FAILURE;
+		return cleanupAfterFailure(&params);
 	}
 	int status;
 	switch (params.mode) {
@@ -31,13 +29,13 @@ int my_tar(int n_arguments, char **arguments)
 			status = x_mode(&params);
 			break;
 		default:
-			status = EXIT_FAILURE;
-			_dprintf(STDERR_FILENO, "%s\n", PARSE_ERROR_MESSAGE);
+			status = error("%s", PARSE_ERROR_MESSAGE);
 	}
 	if (status) {
-		_dprintf(STDERR_FILENO, "%s", PREVIOUS_ERROR_MESSAGE);
+		error("%s", PREVIOUS_ERROR_MESSAGE);
+		return cleanupAfterFailure(&params);
 	}
-	return status;
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv)

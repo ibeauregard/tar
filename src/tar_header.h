@@ -1,4 +1,11 @@
+#ifndef TAR_HEADER_H
+#define TAR_HEADER_H
+
+#include "file/archived_file.h"
+
 /* tar Header Block, from POSIX 1003.1-1990.  */
+
+#define BLOCKSIZE 512
 
 /* POSIX header. */
 
@@ -20,14 +27,15 @@ typedef struct posix_header
 	char devmajor[8];             /* 329 */
 	char devminor[8];             /* 337 */
 	char prefix[155];             /* 345 */
-	/* 500 */
+	char zeros[12];               /* 500 */
+	/* 512 */
 } PosixHeader;
 
-#define BLOCKSIZE 512
+void fillHeader(const ArchivedFile *file, PosixHeader *header);
 
-#define TMAGIC   "ustar"        /* ustar and a null */
+#define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6
-#define TVERSION "00"           /* 00 and no null */
+#define TVERSION " "           /* 00 and no null */
 #define TVERSLEN 2
 
 /* Values used in typeflag field.  */
@@ -222,3 +230,5 @@ struct star_ext_header
 	struct sparse sp[SPARSES_IN_STAR_EXT_HEADER];
 	char isextended;
 };
+
+#endif
