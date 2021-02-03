@@ -88,7 +88,9 @@ int appendDirectory(const ArchivedFile *dir, Archive *archive)
 		char fullpath[_strlen(dir->path)
 						+ _strlen(entry->d_name)
 						+ 1];
-		handlePath(build_path(fullpath, dir->path, entry->d_name), archive);
+		if (handlePath(build_path(fullpath, dir->path, entry->d_name), archive)) {
+			return EXIT_FAILURE;
+		}
 	}
 	closedir(folder);
 	return EXIT_SUCCESS;
