@@ -24,6 +24,9 @@ static int parseHeader(int archivefd, ParsedTar *lastNode);
 static int parseContents(int archivefd, ParsedTar *nextNode);
 static void printParsedTar(ParsedTar *parsedTar);
 
+static int extractAllFiles(ParsedTar *parsedTar);
+static void createFile(ParsedTar *parsedTar);
+
 int x_mode(Params *params)
 {
 	ParsedTar *parsedTar = parseTar(params->archivePath);
@@ -31,10 +34,10 @@ int x_mode(Params *params)
 	printParsedTar(parsedTar);
 	// If no -f arguments, tar will extract the whole tar
 	// otherwise will extract only the specified files
-	/*
 	if (!params->filePaths) {
 		extractAllFiles(parsedTar);
 	} 
+	/*
 	else {
 		extractSomeFiles(parsedTar, params);
 
@@ -194,18 +197,35 @@ static int parseContents(int archivefd, ParsedTar *nextNode)
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
-// static int extractAllFiles(ParsedTar *parsedTar) {
-// 	while (parsedTar) {
-// 		getFileType(parsedTar);
-// 		parsedTar = parsedTar->next;
-// 	}
-// }
-// 
-// static int getFileType(parsedTar) 
-// {
-// 	char *mode = parsedTar->header->mode;
-// 
-// }
+static int extractAllFiles(ParsedTar *parsedTar) 
+{
+	while (parsedTar) {
+		createFile(parsedTar);
+		parsedTar = parsedTar->next;
+	}
+	return 0;
+}
+
+static void createFile(ParsedTar *parsedTar)
+{
+	char mode = parsedTar->header->typeflag;
+	switch (mode) {
+	case REGTYPE:
+	case AREGTYPE:
+		printf("we reg file brahs\n");
+		break;
+	case LNKTYPE:
+		printf("we link file brahs\n");
+		break;
+	case SYMTYPE:
+		printf("we symlink file brahs\n");
+		break;
+	case DIRTYPE:
+		printf("we dir file brahs\n");
+		break;
+	}
+}
+
 
 // /* Function: Extract only the specified files in *params
 //  * -----------------------------------------------------
