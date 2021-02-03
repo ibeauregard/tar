@@ -51,10 +51,7 @@ int handlePath(char *path, Archive *archive)
 	if (initArchivedFile(&file, path)) {
 		return EXIT_FAILURE;
 	}
-	int status = EXIT_SUCCESS;
-	if (writeEntry(&file, archive)) {
-		status = EXIT_FAILURE;
-	}
+	int status = writeEntry(&file, archive);
 	destructArchivedFile(&file);
 	return status;
 }
