@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <dirent.h>
 
-#define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
-
 typedef struct dirent Dirent;
 
 static int handlePath(char *path, Archive *archive);
@@ -18,7 +16,6 @@ static int writeHeader(const ArchivedFile *file, Archive *archive);
 static int writeContent(const ArchivedFile *file, Archive *archive);
 static int appendDirContent(const ArchivedFile *dir, Archive *archive);
 static char* build_path(char* fullPath, const char* dirPath, const char* name);
-static int appendEnd(Archive *archive);
 static PosixHeader getZeroFilledPosixHeader();
 
 int c_mode(Params *params)
@@ -81,13 +78,7 @@ int writeHeader(const ArchivedFile *file, Archive *archive)
 
 int writeContent(const ArchivedFile *file, Archive *archive)
 {
-	if (readFile(file) == SYSCALL_ERR_CODE) {
-		return error(CANT_READ_ERR, file->path);
-	}
-	if (writeToArchive(file, archive) == SYSCALL_ERR_CODE) {
-		return error(CANT_WRITE_ERR, archive->path);
-	}
-	return EXIT_SUCCESS;
+	return readFile(file) || writeToArchive(file, archive);
 }
 
 int appendDirContent(const ArchivedFile *dir, Archive *archive)
@@ -112,15 +103,6 @@ int appendDirContent(const ArchivedFile *dir, Archive *archive)
 char* build_path(char* fullPath, const char* dirPath, const char* name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
-}
-
-int appendEnd(Archive *archive)
-{
-	char blocks[END_OF_ARCHIVE_SIZE] = {0};
-	if (write(archive->fd, blocks, END_OF_ARCHIVE_SIZE) == SYSCALL_ERR_CODE) {
-		return error(CANT_WRITE_ERR, archive->path);
-	}
-	return EXIT_SUCCESS;
 }
 
 PosixHeader getZeroFilledPosixHeader()

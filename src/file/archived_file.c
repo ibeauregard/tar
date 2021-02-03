@@ -84,12 +84,20 @@ int readFile(const ArchivedFile *file)
 	if (file->numBlocks == 0) {
 		return EXIT_SUCCESS;
 	}
-	return read(file->fd, file->buffer, file->numBlocks * BLOCKSIZE);
+	if (read(file->fd, file->buffer, file->numBlocks * BLOCKSIZE)
+		== SYSCALL_ERR_CODE) {
+		return error(CANT_READ_ERR, file->path);
+	}
+	return EXIT_SUCCESS;
 }
 
 int writeToArchive(const ArchivedFile *file, Archive *archive)
 {
-	return write(archive->fd, file->buffer, file->numBlocks * BLOCKSIZE);
+	if (write(archive->fd, file->buffer, file->numBlocks * BLOCKSIZE)
+		== SYSCALL_ERR_CODE) {
+		return error(CANT_WRITE_ERR, archive->path);
+	}
+	return EXIT_SUCCESS;
 }
 
 int finalizeArchivedFile(const ArchivedFile *file)
