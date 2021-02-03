@@ -16,27 +16,21 @@ static TarNode *newParsedTar();
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
-static int parseContents(int archivefd, TarNode *nextNode);
-static void printParsedTar(TarNode *parsedTar);
+static int skipContents(int archivefd, TarNode *lastNode);
+// static int parseContents(int archivefd, TarNode *nextNode);
+static void printTarNode(TarNode *parsedTar);
 
-static int extractAllFiles(TarNode *parsedTar);
-static void createFile(TarNode *parsedTar);
+static int extractFiles(Params *params, TarNode *parsedTar);
+static void createFile(int archivefd, TarNode *parsedTar);
+static int createREGTYPE(int archivefd, TarNode *tarNode);
 
 int x_mode(Params *params)
 {
 	TarNode *parsedTar = parseTar(params->archivePath);
 	(void) parsedTar;
-	printParsedTar(parsedTar);
-	// If no -f arguments, tar will extract the whole tar
-	// otherwise will extract only the specified files
-	if (!params->filePaths) {
-		extractAllFiles(parsedTar);
-	} 
+	printTarNode(parsedTar);
+	extractFiles(params, parsedTar);
 	/*
-	else {
-		extractSomeFiles(parsedTar, params);
-
-	}
 	freeParsedTar(parsedTar);
 	*/
 	return EXIT_SUCCESS;
@@ -45,11 +39,11 @@ int x_mode(Params *params)
 /* Function: Prints out contents of TarNode for debugging
  * -------------------------------------------------------
  */
-static void printParsedTar(TarNode *parsedTar)
+static void printTarNode(TarNode *parsedTar)
 {
 	while (parsedTar) {
 		printf("name: %s\n", parsedTar->header->name);
-		write(1, parsedTar->contents, BLOCKSIZE);
+		// write(1, parsedTar->contents, BLOCKSIZE);
 		printf("\n");
 		parsedTar = parsedTar->next;
 	}
@@ -57,14 +51,13 @@ static void printParsedTar(TarNode *parsedTar)
 
 /* Function: Parses .tar archive into struct TarNode for individual files
  * ------------------------------------------------------------------------
- * parsedTar() parses all the contents of a tar archive and holds it in a  
- * TarNode structure. Each TarNode struct holds the header and contents
- * of a single file along with a pointer to the next TarNode.
+ * parsedTar() parses all the headers of a tar archive and holds it in a  
+ * TarNode structure. Each TarNode struct holds the header of a single file
+ * along with a pointer to the next TarNode. Returns head of linked list.
  */ 
 static TarNode *parseTar(char *archivePath)
 {
 	int archivefd = open(archivePath, O_RDONLY);
-	int endOfArchive = 0;
 	TarNode *headNode = NULL;
 	TarNode *lastNode = headNode;
 	do {
@@ -73,8 +66,8 @@ static TarNode *parseTar(char *archivePath)
 		if (addNode(&headNode, &lastNode) == -1)
 			break;
 		parseHeader(archivefd, lastNode);
-		parseContents(archivefd, lastNode);
-	} while (!endOfArchive);
+		skipContents(archivefd, lastNode);
+	} while (true);
 	return headNode;
 }
 
@@ -134,6 +127,23 @@ static int addNode(TarNode **headNode, TarNode **lastNode)
 	return 0;
 }
 
+static int getContentsSize(TarNode *tarNode)
+{
+	long size = _strtol(tarNode->header->size, NULL, 8);
+	if (size == 0)
+		return 0;
+	int contentBlocks = size / (BLOCKSIZE + 1) + 1;
+	int contentSize = contentBlocks * BLOCKSIZE;
+	return contentSize;
+}
+
+static int skipContents(int archivefd, TarNode *tarNode)
+{
+	int contentSize = getContentsSize(tarNode);
+	lseek(archivefd, contentSize, SEEK_CUR);
+	return contentSize;
+}
+
 /* Function: Parses header in .tar file and puts it in PosixHeader struct
  * ----------------------------------------------------------------------
  */
@@ -167,47 +177,56 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 	bytesRead += read(archivefd, header->devminor, 8);
 	bytesRead += read(archivefd, header->prefix, 155);
 	lseek(archivefd, BLOCKSIZE - bytesRead, SEEK_CUR);
-	return 0;
+	return bytesRead;
 } 
-static int parseContents(int archivefd, TarNode *nextNode)
-{
-	long size = _strtol(nextNode->header->size, NULL, 8);
-	if (size == 0)
-		return 0;
-	long blockCount = size / (BLOCKSIZE + 1) + 1;
-	char *contents = calloc(BLOCKSIZE * (int) blockCount, sizeof(char));
-	nextNode->contents = contents;
-	int bytesRead = read(archivefd, nextNode->contents, BLOCKSIZE * blockCount);
-	// printf("name: %s\n", nextNode->header->name);
-	// write(1, nextNode->contents, BLOCKSIZE * blockCount);
-	// First check that we can read BLOCKSIZE bytes from fildes
-	if (bytesRead < BLOCKSIZE * blockCount) {
-		dprintf(STDERR_FILENO, "Error: Cannot read contents\n");
-		lseek(archivefd, -bytesRead, SEEK_CUR);
-		return -1;
-	}
-	return 0;
-}
+
+// static int parseContents(int archivefd, TarNode *nextNode)
+// {
+// 	long size = _strtol(nextNode->header->size, NULL, 8);
+// 	if (size == 0)
+// 		return 0;
+// 	long blockCount = size / (BLOCKSIZE + 1) + 1;
+// 	char *contents = calloc(BLOCKSIZE * (int) blockCount, sizeof(char));
+// 	nextNode->contents = contents;
+// 	int bytesRead = read(archivefd, nextNode->contents, BLOCKSIZE * blockCount);
+// 	// printf("name: %s\n", nextNode->header->name);
+// 	// write(1, nextNode->contents, BLOCKSIZE * blockCount);
+// 	// First check that we can read BLOCKSIZE bytes from fildes
+// 	if (bytesRead < BLOCKSIZE * blockCount) {
+// 		dprintf(STDERR_FILENO, "Error: Cannot read contents\n");
+// 		lseek(archivefd, -bytesRead, SEEK_CUR);
+// 		return -1;
+// 	}
+// 	return 0;
+// }
 
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
-static int extractAllFiles(TarNode *parsedTar)
+static int extractFiles(Params *params, TarNode *tarNode)
 {
-	while (parsedTar) {
-		createFile(parsedTar);
-		parsedTar = parsedTar->next;
+	int archivefd = open(params->archivePath, O_RDONLY);
+	// int extractAll = params->filePaths == NULL;
+	while (tarNode) {
+		createFile(archivefd, tarNode);
+		/*
+		if (extractAll || searchFile(tarNode, params->PathNode)) 
+		else 
+			// offsetFildesPtr(archive, tarNode);
+		*/
+		tarNode = tarNode->next;
 	}
 	return 0;
 }
 
-static void createFile(TarNode *parsedTar)
+static void createFile(int archivefd, TarNode *tarNode)
 {
-	char mode = parsedTar->header->typeflag;
+	char mode = tarNode->header->typeflag;
 	switch (mode) {
 	case REGTYPE:
 	case AREGTYPE:
 		printf("we reg file brahs\n");
+		createREGTYPE(archivefd, tarNode);
 		break;
 	case LNKTYPE:
 		printf("we link file brahs\n");
@@ -221,33 +240,12 @@ static void createFile(TarNode *parsedTar)
 	}
 }
 
-
-// /* Function: Extract only the specified files in *params
-//  * -----------------------------------------------------
-//  * If extracting a nested file, must be in the form "dirName/fileName".
-//  * If a directory or nested directory is specified e.g. "dirName/dirName",
-//  * all nested directories and files will be extracted too.
-//  */
-// static int extractSomeFiles(TarNode *parsedTar, Params *params) {
-// 	PathNode *pathNode = params->filePaths;
-// 	while (pathNode) {
-// 		PathNode *current = pathNode;
-// 		findAndExtract(parsedTar, current);
-// 		pathNode = pathNode->next;
-// 		free(current);
-// 	}
-// 	return EXIT_SUCCESS;
-// }
-// 
-// static int findThenExtract(TarNode *parsedTar, PathNode *current) {
-// 	while (parsedTar) {
-// 		char *parsedName = parsedTar->header->name;
-// 		char *pathName = current->path;
-// 		if (!_strncmp(parsedName, pathName, _strlen(pathName))
-// 			extractFile(parsedTar);
-// 		parsedTar = parsedTar->next;
-// 	}
-// }
-
-
-
+static int createREGTYPE(int archivefd, TarNode *tarNode)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	int contentsSize = getContentsSize(tarNode);
+	char buffer[contentsSize];
+	read(archivefd, buffer, contentsSize);
+	int filefd = open(tarNode->header->name, O_WRONLY | O_CREAT);
+	return write(filefd, buffer, contentsSize);
+}
