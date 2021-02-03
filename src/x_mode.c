@@ -7,6 +7,7 @@
 
 #include "tar_header.h"
 #include "utils/_string.h"    // For _strlen
+#include "utils/_stdlib.h"    // For _strtol
 #include "modes.h"
 
 typedef struct s_ParsedTar {
@@ -30,10 +31,10 @@ int x_mode(Params *params)
 	printParsedTar(parsedTar);
 	// If no -f arguments, tar will extract the whole tar
 	// otherwise will extract only the specified files
+	/*
 	if (!params->filePaths) {
 		extractAllFiles(parsedTar);
 	} 
-	/*
 	else {
 		extractSomeFiles(parsedTar, params);
 
@@ -170,54 +171,6 @@ static int parseHeader(int archivefd, ParsedTar *lastNode)
 	lseek(archivefd, BLOCKSIZE - bytesRead, SEEK_CUR);
 	return 0;
 } 
-
-static int _isdigit(int d) 
-{
-	if (d < '0' || d > '9')
-		return 0;
-	return 1;
-}
-
-static int getValueOfDigit(char d, int base) 
-{
-	if (base > 35 || base < 1)
-		return -1;
-	else {
-		if (_isdigit((int) d))
-			return d - '0';
-		if ((d >= 'a' && d <= 'a' + base - 10))
-			return d - 'a';
-		if ((d >= 'A' && d <= 'Z' + base - 10))
-			return d - 'A';
-		return -1;
-	}
-		
-}
-
-static long _strtol(const char *restrict str, char **restrict endptr, int base)
-{
-	if (base > 35)
-		return 0;
-	int result = 0;
-	int sign = 1;
-	if (*str == '-') {
-		sign = -1;
-		str++;
-	}
-	for (int i = 0; *(str + i); i++) {
-		char d = *(str + i);
-		int n;
-		if ((n = getValueOfDigit(d, base)) == -1) {
-			if (endptr != NULL)
-				*endptr = (char *) str + i;
-			return result * sign;
-		}
-		result *= base;
-		result += n;
-	}
-	return result * sign;
-}
-
 static int parseContents(int archivefd, ParsedTar *nextNode) 
 {
 	long size = _strtol(nextNode->header->size, NULL, 8);
@@ -241,18 +194,18 @@ static int parseContents(int archivefd, ParsedTar *nextNode)
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
-static int extractAllFiles(ParsedTar *parsedTar) {
-	while (parsedTar) {
-		getFileType(parsedTar);
-		parsedTar = parsedTar->next;
-	}
-}
-
-static int getFileType(parsedTar) 
-{
-	char *mode = parsedTar->header->mode;
-
-}
+// static int extractAllFiles(ParsedTar *parsedTar) {
+// 	while (parsedTar) {
+// 		getFileType(parsedTar);
+// 		parsedTar = parsedTar->next;
+// 	}
+// }
+// 
+// static int getFileType(parsedTar) 
+// {
+// 	char *mode = parsedTar->header->mode;
+// 
+// }
 
 // /* Function: Extract only the specified files in *params
 //  * -----------------------------------------------------
