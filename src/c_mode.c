@@ -52,7 +52,7 @@ int handlePath(char *path, Archive *archive)
 		return EXIT_FAILURE;
 	}
 	int status = writeEntry(&file, archive);
-	destructArchivedFile(&file);
+	finalizeArchivedFile(&file);
 	return status;
 }
 
