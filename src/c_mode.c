@@ -67,11 +67,10 @@ int writeEntry(const ArchivedFile *file, Archive *archive)
 	if (writeContent(file, archive)) {
 		return EXIT_FAILURE;
 	}
-	int status = EXIT_SUCCESS;
 	if (file->type == DIRTYPE) {
-		status = appendDirectory(file, archive);
+		return appendDirectory(file, archive);
 	}
-	return status;
+	return EXIT_SUCCESS;
 }
 
 int writeHeader(const ArchivedFile *file, Archive *archive)
