@@ -37,7 +37,7 @@ int c_mode(Params *params)
 int handlePath(char *path, TarList *list)
 {
 	HeaderData *headerData = malloc(sizeof (HeaderData));
-	if (initHeaderData(headerData, path)) {
+	if (getHeaderDataFromPath(headerData, path)) {
 		return EXIT_FAILURE;
 	}
 	return listEntry(headerData, list);

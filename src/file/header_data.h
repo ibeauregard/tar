@@ -20,7 +20,7 @@ typedef struct s_HeaderData {
 	unsigned int devminor;
 } HeaderData;
 
-int initHeaderData(HeaderData *headerData, char *path);
+int getHeaderDataFromPath(HeaderData *headerData, char *path);
 size_t getNumBlocks(const HeaderData *headerData);
 int finalizeHeaderData(HeaderData *headerData);
 

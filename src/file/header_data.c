@@ -19,7 +19,7 @@ static void setFileName(HeaderData *headerData, char *path);
 static char getFileType(mode_t mode);
 static void setLinkName(HeaderData *headerData);
 
-int initHeaderData(HeaderData *headerData, char *path)
+int getHeaderDataFromPath(HeaderData *headerData, char *path)
 {
 	Stat fileStat;
 	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
