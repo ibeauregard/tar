@@ -47,15 +47,19 @@ int handlePath(char *path, TarList *list)
 
 bool previouslyListed(Stat *fileStat, TarList *list)
 {
+	TarNode *first = list->node;
+	bool result = false;
 	while (list->node) {
 		TarNode *current = list->node;
 		if (fileStat->st_dev == current->headerData->deviceNumber
 			&& fileStat->st_ino == current->headerData->inodeNumber) {
-			return true;
+			result = true;
+			break;
 		}
 		list->node = current->next;
 	}
-	return false;
+	list->node = first;
+	return result;
 }
 
 int listEntry(HeaderData *headerData, TarList *list)
