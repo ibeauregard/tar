@@ -1,5 +1,5 @@
-#ifndef ARCHIVE_FILE_H
-#define ARCHIVE_FILE_H
+#ifndef ARCHIVE_H
+#define ARCHIVE_H
 
 typedef struct s_archive {
 	const char *path;
