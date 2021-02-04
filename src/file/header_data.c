@@ -2,11 +2,6 @@
 #include "../tar_header.h"
 #include "../error/error.h"
 #include "../utils/_string.h"
-#if defined(__APPLE__)
-#include "../utils/sysmacros.h"
-#else
-#include <sys/sysmacros.h>
-#endif
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -19,23 +14,20 @@ static void setFileName(HeaderData *headerData, char *path);
 static char getFileType(mode_t mode);
 static void setLinkName(HeaderData *headerData);
 
-int getHeaderDataFromPath(HeaderData *headerData, char *path)
+HeaderData *fromStatAndPath(Stat *fileStat, char *path, bool previouslyListed)
 {
-	Stat fileStat;
-	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
-		return error(STAT_ERR, path);
-	}
-	headerData->type = getFileType(fileStat.st_mode);
+	HeaderData *headerData = malloc(sizeof (HeaderData));
+	headerData->type = previouslyListed ? LNKTYPE : getFileType(fileStat->st_mode);
 	setFileName(headerData, path);
-	headerData->permissions = fileStat.st_mode & FILE_MODE_BITS;
-	headerData->uid = fileStat.st_uid;
-	headerData->gid = fileStat.st_gid;
-	headerData->size = headerData->type == REGTYPE ? fileStat.st_size : 0;
-	headerData->mtime = fileStat.st_mtime;
+	headerData->permissions = fileStat->st_mode & FILE_MODE_BITS;
+	headerData->uid = fileStat->st_uid;
+	headerData->gid = fileStat->st_gid;
+	headerData->size = headerData->type == REGTYPE ? fileStat->st_size : 0;
+	headerData->mtime = fileStat->st_mtime;
 	setLinkName(headerData);
-	headerData->devmajor = major(fileStat.st_dev);
-	headerData->devminor = minor(fileStat.st_dev);
-	return EXIT_SUCCESS;
+	headerData->deviceNumber = fileStat->st_dev;
+	headerData->inodeNumber = fileStat->st_ino;
+	return headerData;
 }
 
 char getFileType(mode_t mode)
@@ -78,6 +70,10 @@ void setLinkName(HeaderData *headerData)
 	int i = 0;
 	if (headerData->type == SYMTYPE) {
 		i = readlink(headerData->name, headerData->linkname, 100);
+	} else if (headerData->type == LNKTYPE) {
+		unsigned int nameLength = _strlen(headerData->name);
+		i = nameLength > 99 ? 99 : nameLength;
+		_strncpy(headerData->linkname, headerData->name, i);
 	}
 	headerData->linkname[i] = 0;
 

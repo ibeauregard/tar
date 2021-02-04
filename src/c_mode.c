@@ -12,6 +12,7 @@ typedef struct dirent Dirent;
 
 static int handlePath(char *path, TarList *list);
 static int listEntry(HeaderData *headerData, TarList *list);
+static bool previouslyListed(Stat *fileStat, TarList *list);
 static void listHeader(HeaderData *headerData, TarList *list);
 static int listDirEntries(const HeaderData *dirHeaderData, TarList *list);
 static char* buildPath(char* fullPath, const char* dirPath, const char* name);
@@ -36,11 +37,24 @@ int c_mode(Params *params)
 
 int handlePath(char *path, TarList *list)
 {
-	HeaderData *headerData = malloc(sizeof (HeaderData));
-	if (getHeaderDataFromPath(headerData, path)) {
-		return EXIT_FAILURE;
+	Stat fileStat;
+	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
+		return error(STAT_ERR, path);
 	}
+	HeaderData *headerData = fromStatAndPath(&fileStat, path, previouslyListed(&fileStat, list));
 	return listEntry(headerData, list);
+}
+
+bool previouslyListed(Stat *fileStat, TarList *list)
+{
+	while (list->node) {
+		HeaderData *currentNodeHeaderData = list->node->headerData;
+		if (fileStat->st_dev == currentNodeHeaderData->deviceNumber
+			&& fileStat->st_ino == currentNodeHeaderData->inodeNumber) {
+			return true;
+		}
+	}
+	return false;
 }
 
 int listEntry(HeaderData *headerData, TarList *list)
