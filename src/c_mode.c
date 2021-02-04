@@ -48,11 +48,12 @@ int handlePath(char *path, TarList *list)
 bool previouslyListed(Stat *fileStat, TarList *list)
 {
 	while (list->node) {
-		HeaderData *currentNodeHeaderData = list->node->headerData;
-		if (fileStat->st_dev == currentNodeHeaderData->deviceNumber
-			&& fileStat->st_ino == currentNodeHeaderData->inodeNumber) {
+		TarNode *current = list->node;
+		if (fileStat->st_dev == current->headerData->deviceNumber
+			&& fileStat->st_ino == current->headerData->inodeNumber) {
 			return true;
 		}
+		list->node = current->next;
 	}
 	return false;
 }
