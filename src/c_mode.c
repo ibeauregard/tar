@@ -53,7 +53,6 @@ bool previouslyListed(Stat *fileStat, TarList **list)
 		if (fileStat->st_dev == node->headerData->deviceNumber
 			&& fileStat->st_ino == node->headerData->inodeNumber) {
 			return true;
-			break;
 		}
 		node = node->next;
 	}
