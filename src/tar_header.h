@@ -1,7 +1,7 @@
 #ifndef TAR_HEADER_H
 #define TAR_HEADER_H
 
-#include "file/archived_file.h"
+#include "file/parsed_header.h"
 
 /* tar Header Block, from POSIX 1003.1-1990.  */
 
@@ -31,7 +31,8 @@ typedef struct posix_header
 	/* 512 */
 } PosixHeader;
 
-void fillHeader(const ArchivedFile *file, PosixHeader *header);
+PosixHeader getZeroFilledPosixHeader();
+PosixHeader *getFilledHeader(const ParsedHeader *parsedHeader, PosixHeader *header);
 
 #define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6

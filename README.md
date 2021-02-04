@@ -4,7 +4,7 @@
 my_tar
 
 ## Description
-my_tar is a command to manipulate tape archive. The first option to my_tar is a mode indicator from the following list:
+my_tar is a command to manipulate tape archive. The node option to my_tar is a mode indicator from the following list:
 
 -c Create a new archive containing the specified items.
 -r Like -c, but new entries are appended to the archive. The -f option is required.
