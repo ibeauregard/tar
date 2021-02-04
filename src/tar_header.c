@@ -13,7 +13,6 @@
 #define NAME_SIZE 100
 #define DIGITS "01234567"
 #define OCTAL 8
-#define FILE_MODE_BITS 07777
 
 static void setNameAndPrefix(const HeaderData *headerData, PosixHeader *header);
 static void setMode(const HeaderData *headerData, PosixHeader *header);
@@ -59,7 +58,7 @@ PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header)
 
 void setNameAndPrefix(const HeaderData *headerData, PosixHeader *header)
 {
-	const char *name = headerData->path;
+	const char *name = headerData->name;
 	size_t len = _strlen(name);
 	size_t cutoff = len - (len < NAME_SIZE - 1 ? len : NAME_SIZE - 1);
 	_strncpy(header->prefix, name, cutoff);
@@ -68,37 +67,33 @@ void setNameAndPrefix(const HeaderData *headerData, PosixHeader *header)
 
 void setMode(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->mode, headerData->fileStat.st_mode & FILE_MODE_BITS, 8);
+	copyOctal(header->mode, headerData->permissions, 8);
 }
 
 void setUid(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->uid, headerData->fileStat.st_uid, 8);
+	copyOctal(header->uid, headerData->uid, 8);
 }
 
 void setGid(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->gid, headerData->fileStat.st_gid, 8);
+	copyOctal(header->gid, headerData->gid, 8);
 }
 
 void setSize(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->size,
-			  headerData->type == REGTYPE ? headerData->fileStat.st_size : 0,
-			  12);
+	copyOctal(header->size, headerData->size, 12);
 }
 
 void setMtime(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->mtime, headerData->fileStat.st_mtime, 12);
+	copyOctal(header->mtime, headerData->mtime, 12);
 }
 
 void setTypeFlagAndLinkName(const HeaderData *headerData, PosixHeader *header)
 {
 	header->typeflag = headerData->type;
-	if (header->typeflag == SYMTYPE) {
-		readlink(headerData->path, header->linkname, 100);
-	}
+	_strcpy(header->linkname, headerData->linkname);
 }
 
 void setMagic(PosixHeader *header)
@@ -113,19 +108,19 @@ void setVersion(PosixHeader *header)
 
 void setUname(const HeaderData *headerData, PosixHeader *header)
 {
-	_strncpy(header->uname, getpwuid(headerData->fileStat.st_uid)->pw_name, 32);
+	_strncpy(header->uname, getpwuid(headerData->uid)->pw_name, 32);
 }
 
 void setGname(const HeaderData *headerData, PosixHeader *header)
 {
-	_strncpy(header->gname, getgrgid(headerData->fileStat.st_gid)->gr_name, 32);
+	_strncpy(header->gname, getgrgid(headerData->gid)->gr_name, 32);
 }
 
 void setDevMajorDevMinor(const HeaderData *headerData, PosixHeader *header)
 {
 	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
-		copyOctal(header->devmajor, major(headerData->fileStat.st_dev), 8);
-		copyOctal(header->devminor, minor(headerData->fileStat.st_dev), 8);
+		copyOctal(header->devmajor, headerData->devmajor, 8);
+		copyOctal(header->devminor, headerData->devminor, 8);
 	}
 }
 

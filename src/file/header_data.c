@@ -2,29 +2,45 @@
 #include "../tar_header.h"
 #include "../error/error.h"
 #include "../utils/_string.h"
+#if defined(__APPLE__)
+#include "../utils/sysmacros.h"
+#else
+#include <sys/sysmacros.h>
+#endif
 #include <stdlib.h>
 #include <fcntl.h>
+#include <unistd.h>
+
 
 #define PATH_SEP '/'
+#define FILE_MODE_BITS 07777
 
-static char *getFilePath(HeaderData *headerData, char *path);
-static char getFileType(const HeaderData *headerData);
-static size_t getNumBlocks(const HeaderData *headerData);
+static void setFileName(HeaderData *headerData, char *path);
+static char getFileType(mode_t mode);
+static void setLinkName(HeaderData *headerData);
 
 int initHeaderData(HeaderData *headerData, char *path)
 {
-	if (lstat(path, &headerData->fileStat) == SYSCALL_ERR_CODE) {
+	Stat fileStat;
+	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
 		return error(STAT_ERR, path);
 	}
-	headerData->type = getFileType(headerData);
-	headerData->path = getFilePath(headerData, path);
-	headerData->numBlocks = getNumBlocks(headerData);
+	headerData->type = getFileType(fileStat.st_mode);
+	setFileName(headerData, path);
+	headerData->permissions = fileStat.st_mode & FILE_MODE_BITS;
+	headerData->uid = fileStat.st_uid;
+	headerData->gid = fileStat.st_gid;
+	headerData->size = headerData->type == REGTYPE ? fileStat.st_size : 0;
+	headerData->mtime = fileStat.st_mtime;
+	setLinkName(headerData);
+	headerData->devmajor = major(fileStat.st_dev);
+	headerData->devminor = minor(fileStat.st_dev);
 	return EXIT_SUCCESS;
 }
 
-char getFileType(const HeaderData *headerData)
+char getFileType(mode_t mode)
 {
-	switch (headerData->fileStat.st_mode & S_IFMT) {
+	switch (mode & S_IFMT) {
 		case S_IFREG:
 			return REGTYPE;
 		case S_IFLNK:
@@ -42,21 +58,30 @@ char getFileType(const HeaderData *headerData)
 	}
 }
 
-char* getFilePath(HeaderData *headerData, char *path)
+void setFileName(HeaderData *headerData, char *path)
 {
 	unsigned char len = _strlen(path);
-	char *newPath = malloc(len + 2);
-	_strcpy(newPath, path);
+	_strncpy(headerData->name, path, 255);
 	if (headerData->type != DIRTYPE) {
-		return newPath;
+		return;
 	}
 	unsigned char numSlashes;
 	for (numSlashes = 0; numSlashes < len && path[len - numSlashes - 1] == PATH_SEP; numSlashes++);
 	if (numSlashes == 0) {
-		newPath[len] = PATH_SEP;
+		headerData->name[len] = PATH_SEP;
 	}
-	newPath[len - numSlashes + 1] = 0;
-	return newPath;
+	headerData->name[len - numSlashes + 1] = 0;
+}
+
+void setLinkName(HeaderData *headerData)
+{
+	if (headerData->type == SYMTYPE) {
+		readlink(headerData->name, headerData->linkname, 100);
+	} else {
+		for (int i = 0; i < 100; i++) {
+			headerData->linkname[i] = 0;
+		}
+	}
 }
 
 size_t getNumBlocks(const HeaderData *headerData)
@@ -64,12 +89,11 @@ size_t getNumBlocks(const HeaderData *headerData)
 	if (headerData->type != REGTYPE) {
 		return 0;
 	}
-	return headerData->fileStat.st_size ? (headerData->fileStat.st_size - 1) / BLOCKSIZE + 1 : 0;
+	return headerData->size ? (headerData->size - 1) / BLOCKSIZE + 1 : 0;
 }
 
 int finalizeHeaderData(HeaderData *headerData)
 {
-	free(headerData->path);
 	free(headerData);
 	return EXIT_SUCCESS;
 }

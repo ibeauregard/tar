@@ -13,7 +13,7 @@ typedef struct dirent Dirent;
 static int handlePath(char *path, TarList *list);
 static int listEntry(HeaderData *headerData, TarList *list);
 static void listHeader(HeaderData *headerData, TarList *list);
-static int listDirEntries(const HeaderData *parsedDirHeader, TarList *list);
+static int listDirEntries(const HeaderData *dirHeaderData, TarList *list);
 static char* buildPath(char* fullPath, const char* dirPath, const char* name);
 
 int c_mode(Params *params)
@@ -62,18 +62,18 @@ void listHeader(HeaderData *headerData, TarList *list)
 	list->last = list->last->next = node;
 }
 
-int listDirEntries(const HeaderData *parsedDirHeader, TarList *list)
+int listDirEntries(const HeaderData *dirHeaderData, TarList *list)
 {
-	DIR *folder = opendir(parsedDirHeader->path);
+	DIR *folder = opendir(dirHeaderData->name);
 	Dirent *entry;
 	while ((entry = readdir(folder))) {
 		if (!_strcmp(entry->d_name, ".") || !_strcmp(entry->d_name, "..")) {
 			continue;
 		}
-		char fullpath[_strlen(parsedDirHeader->path)
+		char fullpath[_strlen(dirHeaderData->name)
 						+ _strlen(entry->d_name)
 						+ 1];
-		if (handlePath(buildPath(fullpath, parsedDirHeader->path, entry->d_name), list)) {
+		if (handlePath(buildPath(fullpath, dirHeaderData->name, entry->d_name), list)) {
 			return EXIT_FAILURE;
 		}
 	}

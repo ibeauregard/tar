@@ -47,17 +47,18 @@ int dumpHeader(const HeaderData *headerData, const Archive *archive)
 
 int dumpContent(const HeaderData *headerData, const Archive *archive)
 {
-	if (headerData->numBlocks == 0) return EXIT_SUCCESS;
-	const size_t numBytes = headerData->numBlocks * BLOCKSIZE;
+	size_t numBlocks = getNumBlocks(headerData);
+	if (numBlocks == 0) return EXIT_SUCCESS;
+	const size_t numBytes = numBlocks * BLOCKSIZE;
 	char buffer[numBytes];
-	int fd = open(headerData->path, O_RDONLY);
+	int fd = open(headerData->name, O_RDONLY);
 	if (fd == SYSCALL_ERR_CODE) {
-		return error(CANT_OPEN_FILE_ERR, headerData->path);
+		return error(CANT_OPEN_FILE_ERR, headerData->name);
 	}
-	zfillLastBlock(buffer, headerData->numBlocks);
+	zfillLastBlock(buffer, numBlocks);
 	if (read(fd, buffer, numBytes)
 		== SYSCALL_ERR_CODE) {
-		return error(CANT_READ_ERR, headerData->path);
+		return error(CANT_READ_ERR, headerData->name);
 	}
 	if (write(archive->fd, buffer, numBytes)
 		== SYSCALL_ERR_CODE) {

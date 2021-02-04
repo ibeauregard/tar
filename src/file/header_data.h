@@ -8,13 +8,20 @@
 typedef struct stat Stat;
 
 typedef struct s_HeaderData {
-	char *path;
+	char name[255];
+	unsigned short permissions;
+	uid_t uid;
+	gid_t gid;
+	off_t size;
+	time_t mtime;
 	char type;
-	Stat fileStat;
-	size_t numBlocks;
+	char linkname[100];
+	unsigned int devmajor;
+	unsigned int devminor;
 } HeaderData;
 
 int initHeaderData(HeaderData *headerData, char *path);
+size_t getNumBlocks(const HeaderData *headerData);
 int finalizeHeaderData(HeaderData *headerData);
 
 #endif
