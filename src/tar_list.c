@@ -22,13 +22,13 @@ int dumpToArchive(TarList *list, const char *archivePath)
 		return finalizeTarList(list);
 	}
 	while(list->node) {
-		if (dumpHeader(list->node->headerData, &archive)
-			|| dumpContent(list->node->headerData, &archive)) {
+		TarNode *current = list->node;
+		if (dumpHeader(current->headerData, &archive)
+			|| dumpContent(current->headerData, &archive)) {
 			return finalizeTarList(list);
 		}
-		finalizeHeaderData(list->node->headerData);
-		TarNode *current = list->node;
-		list->node = list->node->next;
+		finalizeHeaderData(current->headerData);
+		list->node = current->next;
 		free(current);
 	}
 	int status = appendEnd(&archive);
@@ -70,9 +70,9 @@ int dumpContent(const HeaderData *headerData, const Archive *archive)
 int finalizeTarList(TarList *list)
 {
 	while (list->node) {
-		finalizeHeaderData(list->node->headerData);
 		TarNode *current = list->node;
-		list->node = list->node->next;
+		finalizeHeaderData(current->headerData);
+		list->node = current->next;
 		free(current);
 	}
 	return EXIT_FAILURE;
