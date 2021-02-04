@@ -1,14 +1,7 @@
 #include "tar_header.h"
 #include "utils/_string.h"
-#if defined(__APPLE__)
-#include "utils/sysmacros.h"
-#else
-#include <sys/sysmacros.h>
-#endif
-#include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
-#include <stdio.h>
 
 #define NAME_SIZE 100
 #define DIGITS "01234567"
