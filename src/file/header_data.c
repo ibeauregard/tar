@@ -75,13 +75,12 @@ void setFileName(HeaderData *headerData, char *path)
 
 void setLinkName(HeaderData *headerData)
 {
+	int i = 0;
 	if (headerData->type == SYMTYPE) {
-		readlink(headerData->name, headerData->linkname, 100);
-	} else {
-		for (int i = 0; i < 100; i++) {
-			headerData->linkname[i] = 0;
-		}
+		i = readlink(headerData->name, headerData->linkname, 100);
 	}
+	headerData->linkname[i] = 0;
+
 }
 
 size_t getNumBlocks(const HeaderData *headerData)
