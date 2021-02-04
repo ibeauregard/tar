@@ -113,12 +113,12 @@ static int checkEndOfArchive(int archivefd)
 	return 1;
 }
 
-/* Function: Adds new TarNode first to the existing linked list
+/* Function: Adds new TarNode node to the existing linked list
  * -------------------------------------------------------------
- * @**headNode: Address of the pointer to the first first
- * @**lastNode: Address to the pointer to the last first
- * If there are no nodes, point headNode and lastNode to new first.
- * Otherwise, do nothing with headNode and link new first to lastNode.
+ * @**headNode: Address of the pointer to the first node
+ * @**lastNode: Address to the pointer to the last node
+ * If there are no nodes, point headNode and lastNode to new node.
+ * Otherwise, do nothing with headNode and link new node to lastNode.
  */ 
 static int addNode(TarNode **headNode, TarNode **lastNode)
 {
