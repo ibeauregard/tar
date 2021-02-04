@@ -11,9 +11,9 @@
 typedef struct dirent Dirent;
 
 static int handlePath(char *path, TarList *list);
-static int listEntry(ParsedHeader *parsedHeader, TarList *list);
-static void listHeader(ParsedHeader *parsedHeader, TarList *list);
-static int listDirEntries(const ParsedHeader *parsedDirHeader, TarList *list);
+static int listEntry(HeaderData *headerData, TarList *list);
+static void listHeader(HeaderData *headerData, TarList *list);
+static int listDirEntries(const HeaderData *parsedDirHeader, TarList *list);
 static char* buildPath(char* fullPath, const char* dirPath, const char* name);
 
 int c_mode(Params *params)
@@ -36,25 +36,25 @@ int c_mode(Params *params)
 
 int handlePath(char *path, TarList *list)
 {
-	ParsedHeader *parsedHeader = malloc(sizeof (ParsedHeader));
-	if (initParsedHeader(parsedHeader, path)) {
+	HeaderData *headerData = malloc(sizeof (HeaderData));
+	if (initHeaderData(headerData, path)) {
 		return EXIT_FAILURE;
 	}
-	return listEntry(parsedHeader, list);
+	return listEntry(headerData, list);
 }
 
-int listEntry(ParsedHeader *parsedHeader, TarList *list)
+int listEntry(HeaderData *headerData, TarList *list)
 {
-	listHeader(parsedHeader, list);
-	if (parsedHeader->type == DIRTYPE) {
-		return listDirEntries(parsedHeader, list);
+	listHeader(headerData, list);
+	if (headerData->type == DIRTYPE) {
+		return listDirEntries(headerData, list);
 	}
 	return EXIT_SUCCESS;
 }
 
-void listHeader(ParsedHeader *parsedHeader, TarList *list)
+void listHeader(HeaderData *headerData, TarList *list)
 {
-	TarNode *node = getNewTarNode(parsedHeader);
+	TarNode *node = getNewTarNode(headerData);
 	if (!list->last) {
 		list->node = list->last = node;
 		return;
@@ -62,7 +62,7 @@ void listHeader(ParsedHeader *parsedHeader, TarList *list)
 	list->last = list->last->next = node;
 }
 
-int listDirEntries(const ParsedHeader *parsedDirHeader, TarList *list)
+int listDirEntries(const HeaderData *parsedDirHeader, TarList *list)
 {
 	DIR *folder = opendir(parsedDirHeader->path);
 	Dirent *entry;

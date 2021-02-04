@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static int dumpHeader(const ParsedHeader *parsedHeader, const Archive *archive);
-static int dumpContent(const ParsedHeader *parsedHeader, const Archive *archive);
+static int dumpHeader(const HeaderData *headerData, const Archive *archive);
+static int dumpContent(const HeaderData *headerData, const Archive *archive);
 static void zfillLastBlock(char *buffer, size_t numBlocks);
 
 TarList getNewTarList()
@@ -22,11 +22,11 @@ int dumpToArchive(TarList *list, const char *archivePath)
 		return finalizeTarList(list);
 	}
 	while(list->node) {
-		if (dumpHeader(list->node->parsedHeader, &archive)
-			|| dumpContent(list->node->parsedHeader, &archive)) {
+		if (dumpHeader(list->node->headerData, &archive)
+			|| dumpContent(list->node->headerData, &archive)) {
 			return finalizeTarList(list);
 		}
-		finalizeParsedHeader(list->node->parsedHeader);
+		finalizeHeaderData(list->node->headerData);
 		TarNode *current = list->node;
 		list->node = list->node->next;
 		free(current);
@@ -36,28 +36,28 @@ int dumpToArchive(TarList *list, const char *archivePath)
 	return status;
 }
 
-int dumpHeader(const ParsedHeader *parsedHeader, const Archive *archive)
+int dumpHeader(const HeaderData *headerData, const Archive *archive)
 {
 	PosixHeader header = getZeroFilledPosixHeader();
-	if (write(archive->fd, getFilledHeader(parsedHeader, &header), BLOCKSIZE) == SYSCALL_ERR_CODE) {
+	if (write(archive->fd, getFilledHeader(headerData, &header), BLOCKSIZE) == SYSCALL_ERR_CODE) {
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
 }
 
-int dumpContent(const ParsedHeader *parsedHeader, const Archive *archive)
+int dumpContent(const HeaderData *headerData, const Archive *archive)
 {
-	if (parsedHeader->numBlocks == 0) return EXIT_SUCCESS;
-	const size_t numBytes = parsedHeader->numBlocks * BLOCKSIZE;
+	if (headerData->numBlocks == 0) return EXIT_SUCCESS;
+	const size_t numBytes = headerData->numBlocks * BLOCKSIZE;
 	char buffer[numBytes];
-	int fd = open(parsedHeader->path, O_RDONLY);
+	int fd = open(headerData->path, O_RDONLY);
 	if (fd == SYSCALL_ERR_CODE) {
-		return error(CANT_OPEN_FILE_ERR, parsedHeader->path);
+		return error(CANT_OPEN_FILE_ERR, headerData->path);
 	}
-	zfillLastBlock(buffer, parsedHeader->numBlocks);
+	zfillLastBlock(buffer, headerData->numBlocks);
 	if (read(fd, buffer, numBytes)
 		== SYSCALL_ERR_CODE) {
-		return error(CANT_READ_ERR, parsedHeader->path);
+		return error(CANT_READ_ERR, headerData->path);
 	}
 	if (write(archive->fd, buffer, numBytes)
 		== SYSCALL_ERR_CODE) {
@@ -69,7 +69,7 @@ int dumpContent(const ParsedHeader *parsedHeader, const Archive *archive)
 int finalizeTarList(TarList *list)
 {
 	while (list->node) {
-		finalizeParsedHeader(list->node->parsedHeader);
+		finalizeHeaderData(list->node->headerData);
 		TarNode *current = list->node;
 		list->node = list->node->next;
 		free(current);

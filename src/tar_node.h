@@ -4,12 +4,12 @@
 #include "tar_header.h"
 
 typedef struct s_TarNode {
-	ParsedHeader *parsedHeader;
+	HeaderData *headerData;
 	PosixHeader *header;
 	char *contents;
 	struct s_TarNode *next;
 } TarNode;
 
-TarNode *getNewTarNode(ParsedHeader *parsedHeader);
+TarNode *getNewTarNode(HeaderData *headerData);
 
 #endif

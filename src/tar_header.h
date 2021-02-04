@@ -32,7 +32,7 @@ typedef struct posix_header
 } PosixHeader;
 
 PosixHeader getZeroFilledPosixHeader();
-PosixHeader *getFilledHeader(const ParsedHeader *parsedHeader, PosixHeader *header);
+PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header);
 
 #define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6

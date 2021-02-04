@@ -7,26 +7,26 @@
 
 #define PATH_SEP '/'
 
-static char *getFilePath(ParsedHeader *parsedHeader, char *path);
-static char getFileType(const ParsedHeader *parsedHeader);
-static size_t getNumBlocks(const ParsedHeader *parsedHeader);
+static char *getFilePath(HeaderData *headerData, char *path);
+static char getFileType(const HeaderData *headerData);
+static size_t getNumBlocks(const HeaderData *headerData);
 
-int initParsedHeader(ParsedHeader *parsedHeader, char *path)
+int initHeaderData(HeaderData *headerData, char *path)
 {
 	Stat *fileStat = malloc(sizeof (Stat));
 	if (lstat(path, fileStat) == SYSCALL_ERR_CODE) {
 		return error(STAT_ERR, path);
 	}
-	parsedHeader->fileStat = fileStat;
-	parsedHeader->type = getFileType(parsedHeader);
-	parsedHeader->path = getFilePath(parsedHeader, path);
-	parsedHeader->numBlocks = getNumBlocks(parsedHeader);
+	headerData->fileStat = fileStat;
+	headerData->type = getFileType(headerData);
+	headerData->path = getFilePath(headerData, path);
+	headerData->numBlocks = getNumBlocks(headerData);
 	return EXIT_SUCCESS;
 }
 
-char getFileType(const ParsedHeader *parsedHeader)
+char getFileType(const HeaderData *headerData)
 {
-	switch (parsedHeader->fileStat->st_mode & S_IFMT) {
+	switch (headerData->fileStat->st_mode & S_IFMT) {
 		case S_IFREG:
 			return REGTYPE;
 		case S_IFLNK:
@@ -44,12 +44,12 @@ char getFileType(const ParsedHeader *parsedHeader)
 	}
 }
 
-char* getFilePath(ParsedHeader *parsedHeader, char *path)
+char* getFilePath(HeaderData *headerData, char *path)
 {
 	unsigned char len = _strlen(path);
 	char *newPath = malloc(len + 2);
 	_strcpy(newPath, path);
-	if (parsedHeader->type != DIRTYPE) {
+	if (headerData->type != DIRTYPE) {
 		return newPath;
 	}
 	unsigned char numSlashes;
@@ -61,18 +61,18 @@ char* getFilePath(ParsedHeader *parsedHeader, char *path)
 	return newPath;
 }
 
-size_t getNumBlocks(const ParsedHeader *parsedHeader)
+size_t getNumBlocks(const HeaderData *headerData)
 {
-	if (parsedHeader->type != REGTYPE) {
+	if (headerData->type != REGTYPE) {
 		return 0;
 	}
-	return parsedHeader->fileStat->st_size ? (parsedHeader->fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
+	return headerData->fileStat->st_size ? (headerData->fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
 }
 
-int finalizeParsedHeader(ParsedHeader *parsedHeader)
+int finalizeHeaderData(HeaderData *headerData)
 {
-	free(parsedHeader->fileStat);
-	free(parsedHeader->path);
-	free(parsedHeader);
+	free(headerData->fileStat);
+	free(headerData->path);
+	free(headerData);
 	return EXIT_SUCCESS;
 }

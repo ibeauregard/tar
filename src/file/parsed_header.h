@@ -1,5 +1,5 @@
-#ifndef ARCHIVED_FILE_H
-#define ARCHIVED_FILE_H
+#ifndef HEADER_DATA_H
+#define HEADER_DATA_H
 
 #include "archive.h"
 #include <stddef.h>
@@ -7,14 +7,14 @@
 
 typedef struct stat Stat;
 
-typedef struct s_ParsedHeader {
+typedef struct s_HeaderData {
 	char *path;
 	char type;
 	Stat *fileStat;
 	size_t numBlocks;
-} ParsedHeader;
+} HeaderData;
 
-int initParsedHeader(ParsedHeader *parsedHeader, char *path);
-int finalizeParsedHeader(ParsedHeader *parsedHeader);
+int initHeaderData(HeaderData *headerData, char *path);
+int finalizeHeaderData(HeaderData *headerData);
 
 #endif

@@ -15,18 +15,18 @@
 #define OCTAL 8
 #define FILE_MODE_BITS 07777
 
-static void setNameAndPrefix(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setMode(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setUid(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setGid(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setSize(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setMtime(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setTypeFlagAndLinkName(const ParsedHeader *parsedHeader, PosixHeader *header);
+static void setNameAndPrefix(const HeaderData *headerData, PosixHeader *header);
+static void setMode(const HeaderData *headerData, PosixHeader *header);
+static void setUid(const HeaderData *headerData, PosixHeader *header);
+static void setGid(const HeaderData *headerData, PosixHeader *header);
+static void setSize(const HeaderData *headerData, PosixHeader *header);
+static void setMtime(const HeaderData *headerData, PosixHeader *header);
+static void setTypeFlagAndLinkName(const HeaderData *headerData, PosixHeader *header);
 static void setMagic(PosixHeader *header);
 static void setVersion(PosixHeader *header);
-static void setUname(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setGname(const ParsedHeader *parsedHeader, PosixHeader *header);
-static void setDevMajorDevMinor(const ParsedHeader *parsedHeader, PosixHeader *header);
+static void setUname(const HeaderData *headerData, PosixHeader *header);
+static void setGname(const HeaderData *headerData, PosixHeader *header);
+static void setDevMajorDevMinor(const HeaderData *headerData, PosixHeader *header);
 static void setChecksum(PosixHeader *header);
 static unsigned int computeChecksum(PosixHeader *header);
 static unsigned int getByteSum(const char *field, unsigned char size);
@@ -38,66 +38,66 @@ PosixHeader getZeroFilledPosixHeader()
 	return header;
 }
 
-PosixHeader *getFilledHeader(const ParsedHeader *parsedHeader, PosixHeader *header)
+PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header)
 {
-	setNameAndPrefix(parsedHeader, header);
-	setMode(parsedHeader, header);
-	setUid(parsedHeader, header);
-	setGid(parsedHeader, header);
-	setSize(parsedHeader, header);
-	setMtime(parsedHeader, header);
-	setTypeFlagAndLinkName(parsedHeader, header);
+	setNameAndPrefix(headerData, header);
+	setMode(headerData, header);
+	setUid(headerData, header);
+	setGid(headerData, header);
+	setSize(headerData, header);
+	setMtime(headerData, header);
+	setTypeFlagAndLinkName(headerData, header);
 	setMagic(header);
 	setVersion(header);
-	setUname(parsedHeader, header);
-	setGname(parsedHeader, header);
-	setDevMajorDevMinor(parsedHeader, header);
+	setUname(headerData, header);
+	setGname(headerData, header);
+	setDevMajorDevMinor(headerData, header);
 
 	setChecksum(header);
 	return header;
 }
 
-void setNameAndPrefix(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setNameAndPrefix(const HeaderData *headerData, PosixHeader *header)
 {
-	const char *name = parsedHeader->path;
+	const char *name = headerData->path;
 	size_t len = _strlen(name);
 	size_t cutoff = len - (len < NAME_SIZE - 1 ? len : NAME_SIZE - 1);
 	_strncpy(header->prefix, name, cutoff);
 	_strncpy(header->name, name + cutoff, len - cutoff);
 }
 
-void setMode(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setMode(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->mode, parsedHeader->fileStat->st_mode & FILE_MODE_BITS, 8);
+	copyOctal(header->mode, headerData->fileStat->st_mode & FILE_MODE_BITS, 8);
 }
 
-void setUid(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setUid(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->uid, parsedHeader->fileStat->st_uid, 8);
+	copyOctal(header->uid, headerData->fileStat->st_uid, 8);
 }
 
-void setGid(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setGid(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->gid, parsedHeader->fileStat->st_gid, 8);
+	copyOctal(header->gid, headerData->fileStat->st_gid, 8);
 }
 
-void setSize(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setSize(const HeaderData *headerData, PosixHeader *header)
 {
 	copyOctal(header->size,
-			  parsedHeader->type == REGTYPE ? parsedHeader->fileStat->st_size : 0,
+			  headerData->type == REGTYPE ? headerData->fileStat->st_size : 0,
 			  12);
 }
 
-void setMtime(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setMtime(const HeaderData *headerData, PosixHeader *header)
 {
-	copyOctal(header->mtime, parsedHeader->fileStat->st_mtime, 12);
+	copyOctal(header->mtime, headerData->fileStat->st_mtime, 12);
 }
 
-void setTypeFlagAndLinkName(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setTypeFlagAndLinkName(const HeaderData *headerData, PosixHeader *header)
 {
-	header->typeflag = parsedHeader->type;
+	header->typeflag = headerData->type;
 	if (header->typeflag == SYMTYPE) {
-		readlink(parsedHeader->path, header->linkname, 100);
+		readlink(headerData->path, header->linkname, 100);
 	}
 }
 
@@ -111,21 +111,21 @@ void setVersion(PosixHeader *header)
 	_strncpy(header->version, TVERSION, TVERSLEN);
 }
 
-void setUname(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setUname(const HeaderData *headerData, PosixHeader *header)
 {
-	_strncpy(header->uname, getpwuid(parsedHeader->fileStat->st_uid)->pw_name, 32);
+	_strncpy(header->uname, getpwuid(headerData->fileStat->st_uid)->pw_name, 32);
 }
 
-void setGname(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setGname(const HeaderData *headerData, PosixHeader *header)
 {
-	_strncpy(header->gname, getgrgid(parsedHeader->fileStat->st_gid)->gr_name, 32);
+	_strncpy(header->gname, getgrgid(headerData->fileStat->st_gid)->gr_name, 32);
 }
 
-void setDevMajorDevMinor(const ParsedHeader *parsedHeader, PosixHeader *header)
+void setDevMajorDevMinor(const HeaderData *headerData, PosixHeader *header)
 {
 	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
-		copyOctal(header->devmajor, major(parsedHeader->fileStat->st_dev), 8);
-		copyOctal(header->devminor, minor(parsedHeader->fileStat->st_dev), 8);
+		copyOctal(header->devmajor, major(headerData->fileStat->st_dev), 8);
+		copyOctal(header->devminor, minor(headerData->fileStat->st_dev), 8);
 	}
 }
 
