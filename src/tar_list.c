@@ -9,28 +9,24 @@ static int dumpHeader(const HeaderData *headerData, const Archive *archive);
 static int dumpContent(const HeaderData *headerData, const Archive *archive);
 static void zfillLastBlock(char *buffer, size_t numBlocks);
 
-TarList getNewTarList()
-{
-	static TarList list;
-	return list;
-}
-
 int dumpToArchive(TarList *list, const char *archivePath)
 {
 	Archive archive;
 	if (initArchive(&archive, archivePath)) {
 		return finalizeTarList(list);
 	}
-	while(list->node) {
-		TarNode *current = list->node;
-		if (dumpHeader(current->headerData, &archive)
-			|| dumpContent(current->headerData, &archive)) {
+	TarNode *node = list->first;
+	while(node) {
+		if (dumpHeader(node->headerData, &archive)
+			|| dumpContent(node->headerData, &archive)) {
 			return finalizeTarList(list);
 		}
-		finalizeHeaderData(current->headerData);
-		list->node = current->next;
+		finalizeHeaderData(node->headerData);
+		TarNode *current = node;
+		node = node->next;
 		free(current);
 	}
+	free(list);
 	int status = appendEnd(&archive);
 	finalizeArchive(&archive);
 	return status;
@@ -69,12 +65,15 @@ int dumpContent(const HeaderData *headerData, const Archive *archive)
 
 int finalizeTarList(TarList *list)
 {
-	while (list->node) {
-		TarNode *current = list->node;
-		finalizeHeaderData(current->headerData);
-		list->node = current->next;
+	if (!list) return EXIT_FAILURE;
+	TarNode *node = list->first;
+	while (node) {
+		finalizeHeaderData(node->headerData);
+		TarNode *current = node;
+		node = node->next;
 		free(current);
 	}
+	free(list);
 	return EXIT_FAILURE;
 }
 
