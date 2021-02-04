@@ -4,11 +4,10 @@
 #include "tar_node.h"
 
 typedef struct {
-	TarNode *node;
+	TarNode *const first;
 	TarNode *last;
 } TarList;
 
-TarList getNewTarList();
 int dumpToArchive(TarList *list, const char *archivePath);
 int finalizeTarList(TarList *list);
 

@@ -4,6 +4,7 @@
 #include "archive.h"
 #include <stddef.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 typedef struct stat Stat;
 
@@ -16,11 +17,11 @@ typedef struct s_HeaderData {
 	time_t mtime;
 	char type;
 	char linkname[100];
-	unsigned int devmajor;
-	unsigned int devminor;
+	dev_t deviceNumber;
+	ino_t inodeNumber;
 } HeaderData;
 
-int getHeaderDataFromPath(HeaderData *headerData, char *path);
+HeaderData *fromStatAndPath(Stat *fileStat, char *path, bool previouslyListed);
 size_t getNumBlocks(const HeaderData *headerData);
 int finalizeHeaderData(HeaderData *headerData);
 

@@ -1,5 +1,10 @@
 #include "tar_header.h"
 #include "utils/_string.h"
+#if defined(__APPLE__)
+#include "utils/sysmacros.h"
+#else
+#include <sys/sysmacros.h>
+#endif
 #include <pwd.h>
 #include <grp.h>
 
@@ -112,8 +117,8 @@ void setGname(const HeaderData *headerData, PosixHeader *header)
 void setDevMajorDevMinor(const HeaderData *headerData, PosixHeader *header)
 {
 	if (header->typeflag == CHRTYPE || header->typeflag == BLKTYPE) {
-		copyOctal(header->devmajor, headerData->devmajor, 8);
-		copyOctal(header->devminor, headerData->devminor, 8);
+		copyOctal(header->devmajor, major(headerData->deviceNumber), 8);
+		copyOctal(header->devminor, minor(headerData->deviceNumber), 8);
 	}
 }
 
