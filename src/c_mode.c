@@ -20,15 +20,15 @@ int c_mode(Params *params)
 {
 	TarList list = getNewTarList();
 	while (params->filePaths) {
-		if (!_strcmp(params->archivePath, params->filePaths->path)) {
-			error(FILE_IS_ARCHIVE_ERR, params->filePaths->path);
-			return finalizeTarList(&list);
-		}
-		if (handlePath(params->filePaths->path, &list)) {
-			return finalizeTarList(&list);
-		}
 		PathNode *current = params->filePaths;
-		params->filePaths = params->filePaths->next;
+		if (!_strcmp(params->archivePath, current->path)) {
+			error(FILE_IS_ARCHIVE_ERR, current->path);
+			return finalizeTarList(&list);
+		}
+		if (handlePath(current->path, &list)) {
+			return finalizeTarList(&list);
+		}
+		params->filePaths = current->next;
 		free(current);
 	}
 	return dumpToArchive(&list, params->archivePath);
