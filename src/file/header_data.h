@@ -10,7 +10,7 @@ typedef struct stat Stat;
 typedef struct s_HeaderData {
 	char *path;
 	char type;
-	Stat *fileStat;
+	Stat fileStat;
 	size_t numBlocks;
 } HeaderData;
 

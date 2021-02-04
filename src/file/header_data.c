@@ -13,11 +13,9 @@ static size_t getNumBlocks(const HeaderData *headerData);
 
 int initHeaderData(HeaderData *headerData, char *path)
 {
-	Stat *fileStat = malloc(sizeof (Stat));
-	if (lstat(path, fileStat) == SYSCALL_ERR_CODE) {
+	if (lstat(path, &headerData->fileStat) == SYSCALL_ERR_CODE) {
 		return error(STAT_ERR, path);
 	}
-	headerData->fileStat = fileStat;
 	headerData->type = getFileType(headerData);
 	headerData->path = getFilePath(headerData, path);
 	headerData->numBlocks = getNumBlocks(headerData);
@@ -26,7 +24,7 @@ int initHeaderData(HeaderData *headerData, char *path)
 
 char getFileType(const HeaderData *headerData)
 {
-	switch (headerData->fileStat->st_mode & S_IFMT) {
+	switch (headerData->fileStat.st_mode & S_IFMT) {
 		case S_IFREG:
 			return REGTYPE;
 		case S_IFLNK:
@@ -66,12 +64,11 @@ size_t getNumBlocks(const HeaderData *headerData)
 	if (headerData->type != REGTYPE) {
 		return 0;
 	}
-	return headerData->fileStat->st_size ? (headerData->fileStat->st_size - 1) / BLOCKSIZE + 1 : 0;
+	return headerData->fileStat.st_size ? (headerData->fileStat.st_size - 1) / BLOCKSIZE + 1 : 0;
 }
 
 int finalizeHeaderData(HeaderData *headerData)
 {
-	free(headerData->fileStat);
 	free(headerData->path);
 	free(headerData);
 	return EXIT_SUCCESS;
