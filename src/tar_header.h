@@ -1,7 +1,7 @@
 #ifndef TAR_HEADER_H
 #define TAR_HEADER_H
 
-#include "file/parsed_header.h"
+#include "file/header_data.h"
 
 /* tar Header Block, from POSIX 1003.1-1990.  */
 

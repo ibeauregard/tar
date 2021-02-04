@@ -1,7 +1,7 @@
 #include "modes.h"
 #include "tar_header.h"
 #include "utils/_string.h"
-#include "file/parsed_header.h"
+#include "file/header_data.h"
 #include "error/error.h"
 #include "tar_node.h"
 #include "tar_list.h"
