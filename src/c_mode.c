@@ -7,7 +7,6 @@
 #include "tar_list.h"
 #include <stdlib.h>
 #include <dirent.h>
-#include <string.h>
 
 typedef struct dirent Dirent;
 
@@ -74,9 +73,8 @@ void listHeader(HeaderData *headerData, TarList **list)
 {
 	TarNode *node = getNewTarNode(headerData);
 	if (!(*list)) {
-		TarList newList = {.first = node, .last = node};
 		*list = malloc(sizeof (TarList));
-		memcpy(*list, &newList, sizeof (TarList));
+		*(TarNode **)&(*list)->first = (*list)->last = node;
 		return;
 	}
 	(*list)->last = (*list)->last->next = node;
