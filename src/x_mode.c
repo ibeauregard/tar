@@ -11,19 +11,21 @@
 #include "modes.h"
 #include "tar_node.h"
 
+// Functions for parsing tar archive
 static TarNode *parseTar(char *archivePath);
 static TarNode *newParsedTar();
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
 static int skipContents(int archivefd, TarNode *lastNode);
-// static int parseContents(int archivefd, TarNode *nextNode);
 static void printTarNode(TarNode *parsedTar);
 
+// Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
+static int createSYMTYPE(int archivefd, TarNode *tarNode);
 static int createDIRTYPE(int archivefd, TarNode *tarNode);
 
 int x_mode(Params *params)
@@ -153,54 +155,14 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 {
 	PosixHeader *header = malloc(sizeof(PosixHeader));
 	lastNode->header = header;
-	char nextBlock[BLOCKSIZE + 1] = { '\0' };
-	int bytesRead = read(archivefd, nextBlock, BLOCKSIZE);
+	int bytesRead = read(archivefd, header, BLOCKSIZE);
 	if (bytesRead < BLOCKSIZE) {
 		dprintf(STDERR_FILENO, "Error: Cannot read BLOCKSIZE bytes\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
-	lseek(archivefd, -bytesRead, SEEK_CUR);
-	bytesRead = 0;
-	bytesRead += read(archivefd, header->name, 100);
-	bytesRead += read(archivefd, header->mode, 8);
-	bytesRead += read(archivefd, header->uid, 8);
-	bytesRead += read(archivefd, header->gid, 8);
-	bytesRead += read(archivefd, header->size, 12);
-	bytesRead += read(archivefd, header->mtime, 12);
-	bytesRead += read(archivefd, header->chksum, 8);
-	bytesRead += read(archivefd, &header->typeflag, 1);
-	bytesRead += read(archivefd, header->linkname, 100);
-	bytesRead += read(archivefd, header->magic, 6);
-	bytesRead += read(archivefd, header->version, 2);
-	bytesRead += read(archivefd, header->uname, 32);
-	bytesRead += read(archivefd, header->gname, 32);
-	bytesRead += read(archivefd, header->devmajor, 8);
-	bytesRead += read(archivefd, header->devminor, 8);
-	bytesRead += read(archivefd, header->prefix, 155);
-	lseek(archivefd, BLOCKSIZE - bytesRead, SEEK_CUR);
 	return bytesRead;
 } 
-
-// static int parseContents(int archivefd, TarNode *nextNode)
-// {
-// 	long size = _strtol(nextNode->header->size, NULL, 8);
-// 	if (size == 0)
-// 		return 0;
-// 	long blockCount = size / (BLOCKSIZE + 1) + 1;
-// 	char *contents = calloc(BLOCKSIZE * (int) blockCount, sizeof(char));
-// 	nextNode->contents = contents;
-// 	int bytesRead = read(archivefd, nextNode->contents, BLOCKSIZE * blockCount);
-// 	// printf("name: %s\n", nextNode->header->name);
-// 	// write(1, nextNode->contents, BLOCKSIZE * blockCount);
-// 	// First check that we can read BLOCKSIZE bytes from fildes
-// 	if (bytesRead < BLOCKSIZE * blockCount) {
-// 		dprintf(STDERR_FILENO, "Error: Cannot read contents\n");
-// 		lseek(archivefd, -bytesRead, SEEK_CUR);
-// 		return -1;
-// 	}
-// 	return 0;
-// }
 
 /* Function: Extract all files in tar archive
  * ------------------------------------------
@@ -236,6 +198,7 @@ static void createFile(int archivefd, TarNode *tarNode)
 		break;
 	case SYMTYPE:
 		printf("we symlink file brahs\n");
+		createSYMTYPE(archivefd, tarNode);
 		break;
 	case DIRTYPE:
 		printf("we dir file brahs\n");
@@ -282,6 +245,19 @@ static int createLNKTYPE(int archivefd, TarNode *tarNode)
 	if (link(srcPath, lnkPath) != 0) {
 		return -1;
 	}
+	setFileInfo(tarNode->header->name, tarNode);
+	return 0;
+}
+
+static int createSYMTYPE(int archivefd, TarNode *tarNode)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	char *srcPath = tarNode->header->linkname;
+	char *lnkPath = tarNode->header->name;
+	if (symlink(srcPath, lnkPath) != 0) {
+		return -1;
+	}
+	setFileInfo(tarNode->header->name, tarNode);
 	return 0;
 }
 
