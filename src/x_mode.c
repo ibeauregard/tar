@@ -23,6 +23,8 @@ static void printTarNode(TarNode *parsedTar);
 static int extractFiles(Params *params, TarNode *parsedTar);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
+static int createLNKTYPE(int archivefd, TarNode *tarNode);
+static int createDIRTYPE(int archivefd, TarNode *tarNode);
 
 int x_mode(Params *params)
 {
@@ -230,22 +232,64 @@ static void createFile(int archivefd, TarNode *tarNode)
 		break;
 	case LNKTYPE:
 		printf("we link file brahs\n");
+		createLNKTYPE(archivefd, tarNode);
 		break;
 	case SYMTYPE:
 		printf("we symlink file brahs\n");
 		break;
 	case DIRTYPE:
 		printf("we dir file brahs\n");
+		createDIRTYPE(archivefd, tarNode);
 		break;
 	}
+}
+
+static int countTrailingNulls(char *buffer, int contentsSize)
+{
+	int countNulls = 0;
+	for (int i = contentsSize; buffer[i] == '\0' && i != 0; i--) {
+		countNulls++;
+	}
+	return countNulls;
+}
+
+static int setFileInfo(const char *path, TarNode *tarNode)
+{
+	mode_t mode = _strtol(tarNode->header->mode, NULL, 8);
+	chmod(path, mode);
+	return (int) mode;
 }
 
 static int createREGTYPE(int archivefd, TarNode *tarNode)
 {
 	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+
 	int contentsSize = getContentsSize(tarNode);
 	char buffer[contentsSize];
 	read(archivefd, buffer, contentsSize);
-	int filefd = open(tarNode->header->name, O_WRONLY | O_CREAT);
-	return write(filefd, buffer, contentsSize);
+	int trailingNulls = countTrailingNulls(buffer, contentsSize);
+
+	int filefd = open(tarNode->header->name, O_WRONLY | O_CREAT | O_TRUNC);
+	setFileInfo(tarNode->header->name, tarNode);
+	return write(filefd, buffer, contentsSize - trailingNulls);
+}
+
+static int createLNKTYPE(int archivefd, TarNode *tarNode)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	char *srcPath = tarNode->header->linkname;
+	char *lnkPath = tarNode->header->name;
+	if (link(srcPath, lnkPath) != 0) {
+		return -1;
+	}
+	return 0;
+}
+
+static int createDIRTYPE(int archivefd, TarNode *tarNode)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	mkdir(tarNode->header->name, O_WRONLY | O_CREAT | O_TRUNC);
+	setFileInfo(tarNode->header->name, tarNode);
+	return 0;
+
 }
