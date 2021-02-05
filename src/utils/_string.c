@@ -18,6 +18,12 @@ int _strcmp (const char* str1, const char* str2)
 	return *str1 - *str2;
 }
 
+int _strncmp (const char* str1, const char* str2, int n)
+{
+	for (int i = 0; i < n && *str1 && *str2 && *str1 == *str2; str1++, str2++, i++);
+	return *str1 - *str2;
+}
+
 char* _strcpy(char* dest, const char* source)
 {
 	size_t i;

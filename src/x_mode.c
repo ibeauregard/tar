@@ -23,6 +23,7 @@ static void printTarNode(TarNode *parsedTar);
 
 // Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
+static int searchFile(TarNode *tarNode, PathNode *PathNode);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
@@ -144,7 +145,6 @@ static int getContentsSize(TarNode *tarNode)
 	return contentSize;
 }
 
-
 /* Function: Converts PosixHeader to our custom HeaderData
  * -------------------------------------------------------
  * PosixHeader is the information as stored in the .tar archive, but it is
@@ -185,17 +185,35 @@ static int skipContents(int archivefd, TarNode *tarNode)
 	return contentSize;
 }
 
+static int searchFile(TarNode *tarNode, PathNode *filePaths)
+{
+	char *pathName = filePaths->path;
+	int nameLength = _strlen(pathName);
+	while (filePaths) {
+		if (!_strncmp(tarNode->header->name, pathName, nameLength))
+			return 1;
+		filePaths = filePaths->next;
+	}
+	return 0;
+}
+
+/*
+static int offsetFildesPtr(int archivefd, TarNode *tarNode) 
+{
+}
+*/
+
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
 static int extractFiles(Params *params, TarNode *tarNode)
 {
 	int archivefd = open(params->archivePath, O_RDONLY);
-	// int extractAll = params->filePaths == NULL;
+	int extractAll = params->filePaths == NULL;
 	while (tarNode) {
-		createFile(archivefd, tarNode);
+		if (extractAll || searchFile(tarNode, params->filePaths)) 
+			createFile(archivefd, tarNode);
 		/*
-		if (extractAll || searchFile(tarNode, params->PathNode)) 
 		else 
 			// offsetFildesPtr(archive, tarNode);
 		*/
