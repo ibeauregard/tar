@@ -1,98 +1,94 @@
 #include "modes.h"
 #include "tar_header.h"
 #include "utils/_string.h"
-#include "file/archived_file.h"
-#include "file/archive.h"
+#include "file/header_data.h"
 #include "error/error.h"
-#include <unistd.h>
+#include "tar_node.h"
+#include "tar_list.h"
 #include <stdlib.h>
 #include <dirent.h>
 
 typedef struct dirent Dirent;
 
-static int handlePath(char *path, Archive *archive);
-static int writeEntry(const ArchivedFile *file, Archive *archive);
-static int writeHeader(const ArchivedFile *file, Archive *archive);
-static int writeContent(const ArchivedFile *file, Archive *archive);
-static int appendDirContent(const ArchivedFile *dir, Archive *archive);
-static char* build_path(char* fullPath, const char* dirPath, const char* name);
-static PosixHeader getZeroFilledPosixHeader();
+static int handlePath(char *path, TarList *list);
+static int listEntry(HeaderData *headerData, TarList *list);
+static bool previouslyListed(Stat *fileStat, TarList *list);
+static void listHeader(HeaderData *headerData, TarList *list);
+static int listDirEntries(const HeaderData *dirHeaderData, TarList *list);
+static char* buildPath(char* fullPath, const char* dirPath, const char* name);
 
 int c_mode(Params *params)
 {
-	Archive archive;
-	if (initArchive(&archive, params->archivePath)) {
-		return EXIT_FAILURE;
-	}
+	TarList list = getNewTarList();
 	while (params->filePaths) {
-		if (handlePath(params->filePaths->path, &archive)) {
-			finalizeArchive(&archive);
-			return EXIT_FAILURE;;
-		}
 		PathNode *current = params->filePaths;
-		params->filePaths = params->filePaths->next;
+		if (!_strcmp(params->archivePath, current->path)) {
+			error(FILE_IS_ARCHIVE_ERR, current->path);
+			return finalizeTarList(&list);
+		}
+		if (handlePath(current->path, &list)) {
+			return finalizeTarList(&list);
+		}
+		params->filePaths = current->next;
 		free(current);
 	}
-	int status = appendEnd(&archive);
-	finalizeArchive(&archive);
-	return status;
+	return dumpToArchive(&list, params->archivePath);
 }
 
-int handlePath(char *path, Archive *archive)
+int handlePath(char *path, TarList *list)
 {
-	if (!_strcmp(archive->path, path)) {
-		return error(FILE_IS_ARCHIVE_ERR, path);
+	Stat fileStat;
+	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
+		return error(STAT_ERR, path);
 	}
-	ArchivedFile file;
-	if (initArchivedFile(&file, path)) {
-		return EXIT_FAILURE;
-	}
-	int status = writeEntry(&file, archive);
-	finalizeArchivedFile(&file);
-	return status;
+	HeaderData *headerData = fromStatAndPath(&fileStat, path, previouslyListed(&fileStat, list));
+	return listEntry(headerData, list);
 }
 
-int writeEntry(const ArchivedFile *file, Archive *archive)
+bool previouslyListed(Stat *fileStat, TarList *list)
 {
-	if (writeHeader(file, archive)) {
-		return EXIT_FAILURE;
+	TarNode *node = list->first;
+	while (node) {
+		if (fileStat->st_dev == node->headerData->deviceNumber
+			&& fileStat->st_ino == node->headerData->inodeNumber) {
+			return true;
+		}
+		node = node->next;
 	}
-	if (writeContent(file, archive)) {
-		return EXIT_FAILURE;
-	}
-	if (file->type == DIRTYPE) {
-		return appendDirContent(file, archive);
+	return false;
+}
+
+int listEntry(HeaderData *headerData, TarList *list)
+{
+	listHeader(headerData, list);
+	if (headerData->type == DIRTYPE) {
+		return listDirEntries(headerData, list);
 	}
 	return EXIT_SUCCESS;
 }
 
-int writeHeader(const ArchivedFile *file, Archive *archive)
+void listHeader(HeaderData *headerData, TarList *list)
 {
-	PosixHeader header = getZeroFilledPosixHeader();
-	fillHeader(file, &header);
-	if (write(archive->fd, &header, BLOCKSIZE) == SYSCALL_ERR_CODE) {
-		return error(CANT_WRITE_ERR, archive->path);
+	TarNode *node = getNewTarNode(headerData);
+	if (!list->last) {
+		*(TarNode **)&list->first = list->last = node;
+		return;
 	}
-	return EXIT_SUCCESS;
+	list->last = list->last->next = node;
 }
 
-int writeContent(const ArchivedFile *file, Archive *archive)
+int listDirEntries(const HeaderData *dirHeaderData, TarList *list)
 {
-	return readFile(file) || writeToArchive(file, archive);
-}
-
-int appendDirContent(const ArchivedFile *dir, Archive *archive)
-{
-	DIR *folder = opendir(dir->path);
+	DIR *folder = opendir(dirHeaderData->name);
 	Dirent *entry;
 	while ((entry = readdir(folder))) {
 		if (!_strcmp(entry->d_name, ".") || !_strcmp(entry->d_name, "..")) {
 			continue;
 		}
-		char fullpath[_strlen(dir->path)
+		char fullpath[_strlen(dirHeaderData->name)
 						+ _strlen(entry->d_name)
 						+ 1];
-		if (handlePath(build_path(fullpath, dir->path, entry->d_name), archive)) {
+		if (handlePath(buildPath(fullpath, dirHeaderData->name, entry->d_name), list)) {
 			return EXIT_FAILURE;
 		}
 	}
@@ -100,13 +96,7 @@ int appendDirContent(const ArchivedFile *dir, Archive *archive)
 	return EXIT_SUCCESS;
 }
 
-char* build_path(char* fullPath, const char* dirPath, const char* name)
+char* buildPath(char* fullPath, const char* dirPath, const char* name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
-}
-
-PosixHeader getZeroFilledPosixHeader()
-{
-	static PosixHeader header;
-	return header;
 }

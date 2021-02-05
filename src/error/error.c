@@ -13,7 +13,7 @@ int cleanupAfterFailure(Params *params)
 {
 	while (params->filePaths) {
 		PathNode *current = params->filePaths;
-		params->filePaths = params->filePaths->next;
+		params->filePaths = current->next;
 		free(current);
 	}
 	return EXIT_FAILURE;
