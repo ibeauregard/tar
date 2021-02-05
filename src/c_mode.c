@@ -10,32 +10,32 @@
 
 typedef struct dirent Dirent;
 
-static int handlePath(char *path, TarList **list);
-static int listEntry(HeaderData *headerData, TarList **list);
-static bool previouslyListed(Stat *fileStat, TarList **list);
-static void listHeader(HeaderData *headerData, TarList **list);
-static int listDirEntries(const HeaderData *dirHeaderData, TarList **list);
+static int handlePath(char *path, TarList *list);
+static int listEntry(HeaderData *headerData, TarList *list);
+static bool previouslyListed(Stat *fileStat, TarList *list);
+static void listHeader(HeaderData *headerData, TarList *list);
+static int listDirEntries(const HeaderData *dirHeaderData, TarList *list);
 static char* buildPath(char* fullPath, const char* dirPath, const char* name);
 
 int c_mode(Params *params)
 {
-	TarList *list = NULL;
+	TarList list = getNewTarList();
 	while (params->filePaths) {
 		PathNode *current = params->filePaths;
 		if (!_strcmp(params->archivePath, current->path)) {
 			error(FILE_IS_ARCHIVE_ERR, current->path);
-			return finalizeTarList(list);
+			return finalizeTarList(&list);
 		}
 		if (handlePath(current->path, &list)) {
-			return finalizeTarList(list);
+			return finalizeTarList(&list);
 		}
 		params->filePaths = current->next;
 		free(current);
 	}
-	return dumpToArchive(list, params->archivePath);
+	return dumpToArchive(&list, params->archivePath);
 }
 
-int handlePath(char *path, TarList **list)
+int handlePath(char *path, TarList *list)
 {
 	Stat fileStat;
 	if (lstat(path, &fileStat) == SYSCALL_ERR_CODE) {
@@ -45,10 +45,9 @@ int handlePath(char *path, TarList **list)
 	return listEntry(headerData, list);
 }
 
-bool previouslyListed(Stat *fileStat, TarList **list)
+bool previouslyListed(Stat *fileStat, TarList *list)
 {
-	if (!(*list)) return false;
-	TarNode *node = (*list)->first;
+	TarNode *node = list->first;
 	while (node) {
 		if (fileStat->st_dev == node->headerData->deviceNumber
 			&& fileStat->st_ino == node->headerData->inodeNumber) {
@@ -59,7 +58,7 @@ bool previouslyListed(Stat *fileStat, TarList **list)
 	return false;
 }
 
-int listEntry(HeaderData *headerData, TarList **list)
+int listEntry(HeaderData *headerData, TarList *list)
 {
 	listHeader(headerData, list);
 	if (headerData->type == DIRTYPE) {
@@ -68,18 +67,17 @@ int listEntry(HeaderData *headerData, TarList **list)
 	return EXIT_SUCCESS;
 }
 
-void listHeader(HeaderData *headerData, TarList **list)
+void listHeader(HeaderData *headerData, TarList *list)
 {
 	TarNode *node = getNewTarNode(headerData);
-	if (!(*list)) {
-		*list = malloc(sizeof (TarList));
-		*(TarNode **)&(*list)->first = (*list)->last = node;
+	if (!list->last) {
+		*(TarNode **)&list->first = list->last = node;
 		return;
 	}
-	(*list)->last = (*list)->last->next = node;
+	list->last = list->last->next = node;
 }
 
-int listDirEntries(const HeaderData *dirHeaderData, TarList **list)
+int listDirEntries(const HeaderData *dirHeaderData, TarList *list)
 {
 	DIR *folder = opendir(dirHeaderData->name);
 	Dirent *entry;

@@ -8,6 +8,7 @@ typedef struct {
 	TarNode *last;
 } TarList;
 
+TarList getNewTarList();
 int dumpToArchive(TarList *list, const char *archivePath);
 int finalizeTarList(TarList *list);
 
