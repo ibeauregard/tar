@@ -69,9 +69,9 @@ static TarNode *parseTar(char *archivePath)
 		if (checkEndOfArchive(archivefd))
 			break;
 		if (addNode(&headNode, &lastNode) == -1)
-			return 1;
-		if (parseHeader(archivefd, lastNode) == -1);
-			return 1;
+			return NULL;
+		if (parseHeader(archivefd, lastNode) == -1)
+			return NULL;
 		skipContents(archivefd, lastNode);
 	} while (true);
 	return headNode;
