@@ -6,7 +6,6 @@
 typedef struct s_TarNode {
 	HeaderData *headerData;
 	PosixHeader *header;
-	char *contents;
 	struct s_TarNode *next;
 } TarNode;
 

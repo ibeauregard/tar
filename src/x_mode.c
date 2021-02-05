@@ -81,7 +81,6 @@ static TarNode *newParsedTar()
 	if (!newParsedTar)
 		return NULL;
 	newParsedTar->header = NULL;
-	newParsedTar->contents = NULL;
 	newParsedTar->next = NULL;
 	return newParsedTar;
 }
