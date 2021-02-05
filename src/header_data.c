@@ -75,7 +75,6 @@ void setLinkName(HeaderData *headerData)
 		_strncpy(headerData->linkname, headerData->name, i);
 	}
 	headerData->linkname[i] = 0;
-
 }
 
 size_t getNumBlocks(const HeaderData *headerData)
