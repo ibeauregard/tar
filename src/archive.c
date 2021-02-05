@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define ARCHIVE_FLAGS O_CREAT|O_WRONLY|O_TRUNC
+#define ARCHIVE_FLAGS O_CREAT|O_RDWR|O_TRUNC
 #define ARCHIVE_MODE S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
 #define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
 
