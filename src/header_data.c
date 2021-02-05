@@ -47,7 +47,7 @@ HeaderData *fromLinkAndPath(HeaderData *link, char *path)
 	headerData->permissions = link->permissions;
 	headerData->uid = link->uid;
 	headerData->gid = link->gid;
-	headerData->size = link->size;
+	headerData->size = 0;
 	headerData->mtime = link->mtime;
 	setLinkName(headerData, link->name);
 	headerData->deviceNumber = link->deviceNumber;
