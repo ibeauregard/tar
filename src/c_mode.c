@@ -32,7 +32,7 @@ int c_mode(Params *params)
 		params->filePaths = current->next;
 		free(current);
 	}
-	return dumpToArchive(&list, params->archivePath);
+	return dumpToArchive(&list, params);
 }
 
 int handlePath(char *path, TarList *list)

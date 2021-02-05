@@ -15,10 +15,10 @@ TarList getNewTarList()
 	return list;
 }
 
-int dumpToArchive(TarList *list, const char *archivePath)
+int dumpToArchive(TarList *list, const Params *params)
 {
 	Archive archive;
-	if (initArchive(&archive, archivePath)) {
+	if (initArchive(&archive, params->archivePath)) {
 		return finalizeTarList(list);
 	}
 	TarNode *node = list->first;
