@@ -9,7 +9,7 @@ fi
 cleanUp() {
 	for arg in ${BASH_ARGV[*]}
 	do
-		rm $arg.txt >> /dev/null 2>&1
+        rm $arg.txt >> /dev/null 2>&1
 		rm my_$arg.txt >> /dev/null 2>&1
 		rm $arg.tar >> /dev/null 2>&1
 		rm my_$arg.tar >> /dev/null 2>&1
@@ -25,8 +25,10 @@ for arg in $@
 do
 	name=arg
 	tar -f $arg.tar -c $arg
+	hexdump -C $arg.tar > $arg.txt
 	../my_tar -f my_$arg.tar -c $arg
-	res=$(cmp -b $arg.tar my_$arg.tar) 
+	hexdump -C my_$arg.tar > my_$arg.tar
+	res=$(cmp -b $arg.txt my_$arg.txt) 
 	status=$?
 	if [ $status -gt 0 ]; then
 		printf "FAILED TEST 1: Creating tar archive\n"
