@@ -1,5 +1,5 @@
 #include "tar_list.h"
-#include "file/archive.h"
+#include "archive.h"
 #include "error/error.h"
 #include <stdlib.h>
 #include <unistd.h>
