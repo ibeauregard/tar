@@ -154,54 +154,14 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 {
 	PosixHeader *header = malloc(sizeof(PosixHeader));
 	lastNode->header = header;
-	char nextBlock[BLOCKSIZE + 1] = { '\0' };
-	int bytesRead = read(archivefd, nextBlock, BLOCKSIZE);
+	int bytesRead = read(archivefd, header, BLOCKSIZE);
 	if (bytesRead < BLOCKSIZE) {
 		dprintf(STDERR_FILENO, "Error: Cannot read BLOCKSIZE bytes\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
-	lseek(archivefd, -bytesRead, SEEK_CUR);
-	bytesRead = 0;
-	bytesRead += read(archivefd, header->name, 100);
-	bytesRead += read(archivefd, header->mode, 8);
-	bytesRead += read(archivefd, header->uid, 8);
-	bytesRead += read(archivefd, header->gid, 8);
-	bytesRead += read(archivefd, header->size, 12);
-	bytesRead += read(archivefd, header->mtime, 12);
-	bytesRead += read(archivefd, header->chksum, 8);
-	bytesRead += read(archivefd, &header->typeflag, 1);
-	bytesRead += read(archivefd, header->linkname, 100);
-	bytesRead += read(archivefd, header->magic, 6);
-	bytesRead += read(archivefd, header->version, 2);
-	bytesRead += read(archivefd, header->uname, 32);
-	bytesRead += read(archivefd, header->gname, 32);
-	bytesRead += read(archivefd, header->devmajor, 8);
-	bytesRead += read(archivefd, header->devminor, 8);
-	bytesRead += read(archivefd, header->prefix, 155);
-	lseek(archivefd, BLOCKSIZE - bytesRead, SEEK_CUR);
 	return bytesRead;
 } 
-
-// static int parseContents(int archivefd, TarNode *nextNode)
-// {
-// 	long size = _strtol(nextNode->header->size, NULL, 8);
-// 	if (size == 0)
-// 		return 0;
-// 	long blockCount = size / (BLOCKSIZE + 1) + 1;
-// 	char *contents = calloc(BLOCKSIZE * (int) blockCount, sizeof(char));
-// 	nextNode->contents = contents;
-// 	int bytesRead = read(archivefd, nextNode->contents, BLOCKSIZE * blockCount);
-// 	// printf("name: %s\n", nextNode->header->name);
-// 	// write(1, nextNode->contents, BLOCKSIZE * blockCount);
-// 	// First check that we can read BLOCKSIZE bytes from fildes
-// 	if (bytesRead < BLOCKSIZE * blockCount) {
-// 		dprintf(STDERR_FILENO, "Error: Cannot read contents\n");
-// 		lseek(archivefd, -bytesRead, SEEK_CUR);
-// 		return -1;
-// 	}
-// 	return 0;
-// }
 
 /* Function: Extract all files in tar archive
  * ------------------------------------------
