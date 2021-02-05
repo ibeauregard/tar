@@ -11,15 +11,16 @@
 #include "modes.h"
 #include "tar_node.h"
 
+// Functions for parsing tar archive
 static TarNode *parseTar(char *archivePath);
 static TarNode *newParsedTar();
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
 static int skipContents(int archivefd, TarNode *lastNode);
-// static int parseContents(int archivefd, TarNode *nextNode);
 static void printTarNode(TarNode *parsedTar);
 
+// Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
