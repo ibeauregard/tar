@@ -33,6 +33,7 @@ typedef struct posix_header
 
 PosixHeader getZeroFilledPosixHeader();
 PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header);
+unsigned int computeChecksum(PosixHeader *header);
 
 #define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6
