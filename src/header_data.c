@@ -9,23 +9,49 @@
 #define PATH_SEP '/'
 #define FILE_MODE_BITS 07777
 
+HeaderData *fromStatAndPath(Stat *fileStat, char *path);
+HeaderData *fromLinkAndPath(HeaderData *link, char *path);
 static void setFileName(HeaderData *headerData, char *path);
 static char getFileType(mode_t mode);
-static void setLinkName(HeaderData *headerData);
+static void setLinkName(HeaderData *headerData, char *name);
 
-HeaderData *fromStatAndPath(Stat *fileStat, char *path, bool previouslyListed)
+HeaderData *getHeaderData(Stat *fileStat, char *path, HeaderData *link)
+{
+	if (link) {
+		return fromLinkAndPath(link, path);
+	}
+	return fromStatAndPath(fileStat, path);
+}
+
+HeaderData *fromStatAndPath(Stat *fileStat, char *path)
 {
 	HeaderData *headerData = malloc(sizeof (HeaderData));
-	headerData->type = previouslyListed ? LNKTYPE : getFileType(fileStat->st_mode);
+	headerData->type = getFileType(fileStat->st_mode);
 	setFileName(headerData, path);
 	headerData->permissions = fileStat->st_mode & FILE_MODE_BITS;
 	headerData->uid = fileStat->st_uid;
 	headerData->gid = fileStat->st_gid;
 	headerData->size = headerData->type == REGTYPE ? fileStat->st_size : 0;
 	headerData->mtime = fileStat->st_mtime;
-	setLinkName(headerData);
+	setLinkName(headerData, headerData->name);
 	headerData->deviceNumber = fileStat->st_dev;
 	headerData->inodeNumber = fileStat->st_ino;
+	return headerData;
+}
+
+HeaderData *fromLinkAndPath(HeaderData *link, char *path)
+{
+	HeaderData *headerData = malloc(sizeof (HeaderData));
+	headerData->type = LNKTYPE;
+	_strncpy(headerData->name, path, 255);
+	headerData->permissions = link->permissions;
+	headerData->uid = link->uid;
+	headerData->gid = link->gid;
+	headerData->size = link->size;
+	headerData->mtime = link->mtime;
+	setLinkName(headerData, link->name);
+	headerData->deviceNumber = link->deviceNumber;
+	headerData->inodeNumber = link->inodeNumber;
 	return headerData;
 }
 
@@ -51,11 +77,11 @@ char getFileType(mode_t mode)
 
 void setFileName(HeaderData *headerData, char *path)
 {
-	unsigned char len = _strlen(path);
 	_strncpy(headerData->name, path, 255);
 	if (headerData->type != DIRTYPE) {
 		return;
 	}
+	unsigned char len = _strlen(path);
 	unsigned char numSlashes;
 	for (numSlashes = 0; numSlashes < len && path[len - numSlashes - 1] == PATH_SEP; numSlashes++);
 	if (numSlashes == 0) {
@@ -64,15 +90,15 @@ void setFileName(HeaderData *headerData, char *path)
 	headerData->name[len - numSlashes + 1] = 0;
 }
 
-void setLinkName(HeaderData *headerData)
+void setLinkName(HeaderData *headerData, char *name)
 {
 	int i = 0;
 	if (headerData->type == SYMTYPE) {
-		i = readlink(headerData->name, headerData->linkname, 100);
+		i = readlink(name, headerData->linkname, 100);
 	} else if (headerData->type == LNKTYPE) {
-		unsigned int nameLength = _strlen(headerData->name);
+		unsigned int nameLength = _strlen(name);
 		i = nameLength > 99 ? 99 : nameLength;
-		_strncpy(headerData->linkname, headerData->name, i);
+		_strncpy(headerData->linkname, name, i);
 	}
 	headerData->linkname[i] = 0;
 }

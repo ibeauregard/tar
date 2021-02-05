@@ -21,7 +21,7 @@ typedef struct s_HeaderData {
 	ino_t inodeNumber;
 } HeaderData;
 
-HeaderData *fromStatAndPath(Stat *fileStat, char *path, bool previouslyListed);
+HeaderData *getHeaderData(Stat *fileStat, char *path, HeaderData *link);
 size_t getNumBlocks(const HeaderData *headerData);
 int finalizeHeaderData(HeaderData *headerData);
 
