@@ -1,7 +1,6 @@
 #include "header_data.h"
-#include "../tar_header.h"
-#include "../error/error.h"
-#include "../utils/_string.h"
+#include "tar_header.h"
+#include "utils/_string.h"
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
