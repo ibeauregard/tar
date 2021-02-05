@@ -24,6 +24,7 @@ static int extractFiles(Params *params, TarNode *parsedTar);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
+static int createSYMTYPE(int archivefd, TarNode *tarNode);
 static int createDIRTYPE(int archivefd, TarNode *tarNode);
 
 int x_mode(Params *params)
@@ -236,6 +237,7 @@ static void createFile(int archivefd, TarNode *tarNode)
 		break;
 	case SYMTYPE:
 		printf("we symlink file brahs\n");
+		createSYMTYPE(archivefd, tarNode);
 		break;
 	case DIRTYPE:
 		printf("we dir file brahs\n");
@@ -282,6 +284,19 @@ static int createLNKTYPE(int archivefd, TarNode *tarNode)
 	if (link(srcPath, lnkPath) != 0) {
 		return -1;
 	}
+	setFileInfo(tarNode->header->name, tarNode);
+	return 0;
+}
+
+static int createSYMTYPE(int archivefd, TarNode *tarNode)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	char *srcPath = tarNode->header->linkname;
+	char *lnkPath = tarNode->header->name;
+	if (symlink(srcPath, lnkPath) != 0) {
+		return -1;
+	}
+	setFileInfo(tarNode->header->name, tarNode);
 	return 0;
 }
 
