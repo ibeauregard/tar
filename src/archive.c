@@ -7,15 +7,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define ARCHIVE_FLAGS O_CREAT|O_RDWR|O_TRUNC
+#define APPEND_FLAGS O_CREAT|O_RDWR
+#define TRUNCATE_FLAGS APPEND_FLAGS|O_TRUNC
 #define ARCHIVE_MODE S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
 #define END_OF_ARCHIVE_SIZE 2 * BLOCKSIZE
 
-static int getArchiveFd(const char *archivePath);
+static int getArchiveFd(const char *archivePath, bool append);
+static int getArchiveFlags(bool append);
 
-int initArchive(Archive *archive, const char *archivePath)
+int initArchive(Archive *archive, const char *archivePath, bool append)
 {
-	archive->fd = getArchiveFd(archivePath);
+	archive->fd = getArchiveFd(archivePath, append);
 	if (archive->fd == SYSCALL_ERR_CODE) {
 		return error(CANT_OPEN_FILE_ERR, archivePath);
 	}
@@ -37,10 +39,15 @@ int finalizeArchive(Archive *archive)
 	return close(archive->fd);
 }
 
-int getArchiveFd(const char *archivePath)
+int getArchiveFd(const char *archivePath, bool append)
 {
 	if (_strcmp(archivePath, STDOUT_PATH)) {
-		return open(archivePath, ARCHIVE_FLAGS, ARCHIVE_MODE);
+		return open(archivePath, getArchiveFlags(append), ARCHIVE_MODE);
 	}
 	return STDOUT_FILENO;
+}
+
+inline int getArchiveFlags(bool append)
+{
+	return append ? APPEND_FLAGS : TRUNCATE_FLAGS;
 }

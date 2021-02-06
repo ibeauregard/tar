@@ -2,7 +2,8 @@
 #define CREATE_H
 
 #include "argparsing/params.h"
+#include <stdbool.h>
 
-int create(Params *params);
+int create(Params *params, bool append);
 
 #endif

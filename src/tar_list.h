@@ -10,7 +10,7 @@ typedef struct {
 } TarList;
 
 TarList getNewTarList();
-int dumpToArchive(TarList *list, const Params *params);
+int dumpToArchive(TarList *list, const Params *params, bool append);
 int finalizeTarList(TarList *list);
 
 #endif

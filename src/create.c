@@ -17,7 +17,7 @@ static void listHeader(HeaderData *headerData, TarList *list);
 static int listDirEntries(const HeaderData *dirHeaderData, TarList *list);
 static char* buildPath(char* fullPath, const char* dirPath, const char* name);
 
-int create(Params *params)
+int create(Params *params, bool append)
 {
 	TarList list = getNewTarList();
 	while (params->filePaths) {
@@ -32,7 +32,7 @@ int create(Params *params)
 		params->filePaths = current->next;
 		free(current);
 	}
-	return dumpToArchive(&list, params);
+	return dumpToArchive(&list, params, append);
 }
 
 int handlePath(char *path, TarList *list)
