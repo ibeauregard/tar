@@ -34,6 +34,8 @@ typedef struct posix_header
 PosixHeader getZeroFilledPosixHeader();
 PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header);
 unsigned int computeChecksum(PosixHeader *header);
+char *getNameFromHeader(PosixHeader *header, char *dest);
+long getMtimeFromHeader(PosixHeader *header);
 
 #define TMAGIC   "ustar "        /* ustar and a null */
 #define TMAGLEN  6

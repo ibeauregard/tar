@@ -15,10 +15,10 @@ static int getValueOfDigit(char d, int base)
 	else {
 		if (_isdigit((int) d))
 			return d - '0';
-		if ((d >= 'a' && d <= 'a' + base - 10))
-			return d - 'a';
-		if ((d >= 'A' && d <= 'Z' + base - 10))
-			return d - 'A';
+		if ((d >= 'a' && d < 'a' + base - 10))
+			return 10 + d - 'a';
+		if ((d >= 'A' && d < 'A' + base - 10))
+			return 10 + d - 'A';
 		return -1;
 	}
 		

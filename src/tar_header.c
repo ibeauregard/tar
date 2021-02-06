@@ -1,5 +1,6 @@
 #include "tar_header.h"
 #include "utils/_string.h"
+#include "utils/_stdlib.h"
 #if defined(__APPLE__)
 #include "utils/sysmacros.h"
 #else
@@ -167,4 +168,14 @@ void copyOctal(char *dest, unsigned int num, unsigned char size)
 		dest[--i] = DIGITS[num % OCTAL];
 		num /= OCTAL;
 	}
+}
+
+char *getNameFromHeader(PosixHeader *header, char *dest)
+{
+	return _strcat(_strcpy(dest, header->prefix), header->name);
+}
+
+long getMtimeFromHeader(PosixHeader *header)
+{
+	return _strtol(header->mtime, NULL, OCTAL);
 }

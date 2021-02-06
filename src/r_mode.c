@@ -7,7 +7,7 @@ static int sanityCheck(char *archivePath);
 
 int r_mode(Params *params)
 {
-	return sanityCheck(params->archivePath) || create(params, true);
+	return sanityCheck(params->archivePath) || create(params, true, NULL);
 }
 
 // TODO: should not always return EXIT_SUCCESS
