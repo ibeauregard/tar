@@ -3,18 +3,18 @@
 #include "tar_parsing.h"
 #include <stdlib.h>
 
-static void destructExistingHeader(TarNode *existingHeaders);
+static void destructExistingHeaders(TarNode *existingHeaders);
 
 int u_mode(Params *params)
 {
 	// TODO: Should not cause an error when archivePath points to an empty archive file
 	TarNode *existingHeaders = parseTar(params->archivePath);
 	int status = create(params, true, existingHeaders);
-	destructExistingHeader(existingHeaders);
+	destructExistingHeaders(existingHeaders);
 	return status;
 }
 
-void destructExistingHeader(TarNode *existingHeaders)
+void destructExistingHeaders(TarNode *existingHeaders)
 {
 	while (existingHeaders) {
 		TarNode *current = existingHeaders;
