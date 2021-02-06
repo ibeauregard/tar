@@ -25,7 +25,6 @@ static void setUname(const HeaderData *headerData, PosixHeader *header);
 static void setGname(const HeaderData *headerData, PosixHeader *header);
 static void setDevMajorDevMinor(const HeaderData *headerData, PosixHeader *header);
 static void setChecksum(PosixHeader *header);
-unsigned int computeChecksum(PosixHeader *header);
 static unsigned int getByteSum(const char *field, unsigned char size);
 static void copyOctal(char *dest, unsigned int num, unsigned char size);
 
