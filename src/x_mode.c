@@ -6,6 +6,7 @@
 // #include <string.h>           // For strerror
 
 #include "tar_header.h"
+#include "header_data.h"
 #include "utils/_string.h"    // For _strlen
 #include "utils/_stdlib.h"    // For _strtol
 #include "modes.h"
@@ -22,6 +23,7 @@ static void printTarNode(TarNode *parsedTar);
 
 // Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
+static int searchFile(TarNode *tarNode, PathNode *PathNode);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
@@ -68,8 +70,9 @@ static TarNode *parseTar(char *archivePath)
 		if (checkEndOfArchive(archivefd))
 			break;
 		if (addNode(&headNode, &lastNode) == -1)
-			break;
-		parseHeader(archivefd, lastNode);
+			return NULL;
+		if (parseHeader(archivefd, lastNode) == -1)
+			return NULL;
 		skipContents(archivefd, lastNode);
 	} while (true);
 	return headNode;
@@ -119,8 +122,10 @@ static int checkEndOfArchive(int archivefd)
 static int addNode(TarNode **headNode, TarNode **lastNode)
 {
 	TarNode *nextNode = newParsedTar();
-	if (!nextNode)
+	if (!nextNode) {
+		dprintf(STDERR_FILENO, "Error: Could not allocate memory\n");
 		return -1;
+	}
 	if (*headNode == NULL) {
 		*headNode = *lastNode = nextNode;
 	} else {
@@ -140,12 +145,18 @@ static int getContentsSize(TarNode *tarNode)
 	return contentSize;
 }
 
-static int skipContents(int archivefd, TarNode *tarNode)
+/* Function: Converts PosixHeader to our custom HeaderData
+ * -------------------------------------------------------
+ * PosixHeader is the information as stored in the .tar archive, but it is
+ * not practical for using across the program since all data is in ASCII.
+ * The HeaderData structure uses appropriate data types for ease of manipulation.
+static int convertHeader(PosixHeader* posixHeader)
 {
-	int contentSize = getContentsSize(tarNode);
-	lseek(archivefd, contentSize, SEEK_CUR);
-	return contentSize;
+	HeaderData *headerData = malloc(sizeof(HeaderData));
+	_strcpy(headerData->name, posixHeader->name);
+	headerData->permissions = _strtol(posixHeader->mode, NULL, 8)
 }
+ */
 
 /* Function: Parses header in .tar file and puts it in PosixHeader struct
  * ----------------------------------------------------------------------
@@ -160,8 +171,37 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
+	if (_strtol(header->chksum, NULL, 8) != computeChecksum(header)) {
+		dprintf(STDERR_FILENO, "Error: CheckSum does not match \n");
+		return -1;
+	}
 	return bytesRead;
 } 
+
+static int skipContents(int archivefd, TarNode *tarNode)
+{
+	int contentSize = getContentsSize(tarNode);
+	lseek(archivefd, contentSize, SEEK_CUR);
+	return contentSize;
+}
+
+static int searchFile(TarNode *tarNode, PathNode *filePaths)
+{
+	char *pathName = filePaths->path;
+	int nameLength = _strlen(pathName);
+	while (filePaths) {
+		if (!_strncmp(tarNode->header->name, pathName, nameLength))
+			return 1;
+		filePaths = filePaths->next;
+	}
+	return 0;
+}
+
+/*
+static int offsetFildesPtr(int archivefd, TarNode *tarNode) 
+{
+}
+*/
 
 /* Function: Extract all files in tar archive
  * ------------------------------------------
@@ -169,11 +209,11 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 static int extractFiles(Params *params, TarNode *tarNode)
 {
 	int archivefd = open(params->archivePath, O_RDONLY);
-	// int extractAll = params->filePaths == NULL;
+	int extractAll = params->filePaths == NULL;
 	while (tarNode) {
-		createFile(archivefd, tarNode);
+		if (extractAll || searchFile(tarNode, params->filePaths)) 
+			createFile(archivefd, tarNode);
 		/*
-		if (extractAll || searchFile(tarNode, params->PathNode)) 
 		else 
 			// offsetFildesPtr(archive, tarNode);
 		*/
