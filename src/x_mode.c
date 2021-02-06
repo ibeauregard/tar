@@ -140,7 +140,7 @@ static int getContentsSize(TarNode *tarNode)
 	long size = _strtol(tarNode->header->size, NULL, 8);
 	if (size == 0)
 		return 0;
-	int contentBlocks = size / (BLOCKSIZE + 1) + 1;
+	int contentBlocks = (size - 1) / BLOCKSIZE + 1;
 	int contentSize = contentBlocks * BLOCKSIZE;
 	return contentSize;
 }
