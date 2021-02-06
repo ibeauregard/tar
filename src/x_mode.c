@@ -11,9 +11,9 @@
 #include "utils/_stdlib.h"    // For _strtol
 #include "modes.h"
 #include "tar_node.h"
+#include "tar_parsing.h"
 
 // Functions for parsing tar archive
-static TarNode *parseTar(char *archivePath);
 static TarNode *newParsedTar();
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
@@ -61,7 +61,7 @@ static void printTarNode(TarNode *parsedTar)
  * TarNode structure. Each TarNode struct holds the header of a single file
  * along with a pointer to the next TarNode. Returns head of linked list.
  */ 
-static TarNode *parseTar(char *archivePath)
+TarNode *parseTar(char *archivePath)
 {
 	int archivefd = open(archivePath, O_RDONLY);
 	TarNode *headNode = NULL;
