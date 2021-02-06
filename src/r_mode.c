@@ -18,6 +18,7 @@ int sanityCheck(char *archivePath)
 	TarNode *headNode = parseTar(archivePath);
 	while (headNode) {
 		TarNode *current = headNode;
+		free(current->header);
 		headNode = current->next;
 		free(current);
 	}
