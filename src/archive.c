@@ -14,12 +14,16 @@
 
 static int getArchiveFd(const char *archivePath, bool append);
 static int getArchiveFlags(bool append);
+static void offsetToAppend(int archiveFd);
 
 int initArchive(Archive *archive, const char *archivePath, bool append)
 {
 	archive->fd = getArchiveFd(archivePath, append);
 	if (archive->fd == SYSCALL_ERR_CODE) {
 		return error(CANT_OPEN_FILE_ERR, archivePath);
+	}
+	if (append) {
+		offsetToAppend(archive->fd);
 	}
 	archive->path = archivePath;
 	return EXIT_SUCCESS;
@@ -50,4 +54,27 @@ int getArchiveFd(const char *archivePath, bool append)
 inline int getArchiveFlags(bool append)
 {
 	return append ? APPEND_FLAGS : TRUNCATE_FLAGS;
+}
+
+// Assumes this is either an empty file or a valid archive file
+void offsetToAppend(int archiveFd)
+{
+	Stat archiveStat;
+	fstat(archiveFd, &archiveStat);
+	if (!archiveStat.st_size) {
+		return;
+	}
+	// This is a non-empty valid archive
+	// position myself two blocks before the end
+	off_t offset = lseek(archiveFd, -END_OF_ARCHIVE_SIZE, SEEK_END);
+	char buffer[BLOCKSIZE];
+	const char nullBlock[BLOCKSIZE] = {0};
+	while (offset >= BLOCKSIZE) {
+		lseek(archiveFd, -BLOCKSIZE, SEEK_CUR);
+		read(archiveFd, buffer, BLOCKSIZE);
+		if (_strcmp(buffer, nullBlock)) {
+			break;
+		}
+		offset = lseek(archiveFd, -BLOCKSIZE, SEEK_CUR);
+	}
 }
