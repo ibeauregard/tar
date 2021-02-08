@@ -178,6 +178,14 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 	return bytesRead;
 } 
 
+/*
+static int skipHeader(int archivefd)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	return BLOCKSIZE;
+}
+*/
+
 static int skipContents(int archivefd, TarNode *tarNode)
 {
 	int contentSize = getContentsSize(tarNode);
@@ -196,13 +204,6 @@ static int searchFile(TarNode *tarNode, PathNode *filePaths)
 	}
 	return 0;
 }
-
-/*
-static int offsetFildesPtr(int archivefd, TarNode *tarNode) 
-{
-}
-*/
-
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
@@ -214,8 +215,10 @@ static int extractFiles(Params *params, TarNode *tarNode)
 		if (extractAll || searchFile(tarNode, params->filePaths)) 
 			createFile(archivefd, tarNode);
 		/*
-		else 
-			// offsetFildesPtr(archive, tarNode);
+		else {
+			skipHeader(archivefd);
+			skipContents(archivefd, tarNode);
+		}
 		*/
 		tarNode = tarNode->next;
 	}
