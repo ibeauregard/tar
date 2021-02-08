@@ -15,6 +15,7 @@
 
 // Functions for parsing tar archive
 static TarNode *newParsedTar();
+static void freeParsedTar(TarNode *parsedTar);
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
@@ -33,12 +34,10 @@ static int createDIRTYPE(int archivefd, TarNode *tarNode);
 int x_mode(Params *params)
 {
 	TarNode *parsedTar = parseTar(params->archivePath);
-	(void) parsedTar;
+	// (void) parsedTar;
 	printTarNode(parsedTar);
 	extractFiles(params, parsedTar);
-	/*
 	freeParsedTar(parsedTar);
-	*/
 	return EXIT_SUCCESS;
 }
 
@@ -86,6 +85,17 @@ static TarNode *newParsedTar()
 	newParsedTar->header = NULL;
 	newParsedTar->next = NULL;
 	return newParsedTar;
+}
+
+static void freeParsedTar(TarNode *parsedTar) 
+{
+	TarNode *tmp;
+	while (parsedTar) {
+		free(parsedTar->header);
+		tmp = parsedTar;
+		parsedTar = parsedTar->next;
+		free(tmp);
+	}
 }
 
 /* Function: Checks if next BLOCKSIZE * 2 bytes are null
@@ -145,19 +155,6 @@ static int getContentsSize(TarNode *tarNode)
 	return contentSize;
 }
 
-/* Function: Converts PosixHeader to our custom HeaderData
- * -------------------------------------------------------
- * PosixHeader is the information as stored in the .tar archive, but it is
- * not practical for using across the program since all data is in ASCII.
- * The HeaderData structure uses appropriate data types for ease of manipulation.
-static int convertHeader(PosixHeader* posixHeader)
-{
-	HeaderData *headerData = malloc(sizeof(HeaderData));
-	_strcpy(headerData->name, posixHeader->name);
-	headerData->permissions = _strtol(posixHeader->mode, NULL, 8)
-}
- */
-
 /* Function: Parses header in .tar file and puts it in PosixHeader struct
  * ----------------------------------------------------------------------
  */
@@ -178,13 +175,11 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 	return bytesRead;
 } 
 
-/*
 static int skipHeader(int archivefd)
 {
 	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
 	return BLOCKSIZE;
 }
-*/
 
 static int skipContents(int archivefd, TarNode *tarNode)
 {
@@ -198,7 +193,7 @@ static int searchFile(TarNode *tarNode, PathNode *filePaths)
 	char *pathName = filePaths->path;
 	int nameLength = _strlen(pathName);
 	while (filePaths) {
-		if (!_strncmp(tarNode->header->name, pathName, nameLength))
+		if (!_strncmp(tarNode->header->name, pathName, nameLength)) 
 			return 1;
 		filePaths = filePaths->next;
 	}
@@ -210,16 +205,14 @@ static int searchFile(TarNode *tarNode, PathNode *filePaths)
 static int extractFiles(Params *params, TarNode *tarNode)
 {
 	int archivefd = open(params->archivePath, O_RDONLY);
-	int extractAll = params->filePaths == NULL;
+	int extractAll = (params->filePaths == NULL);
 	while (tarNode) {
 		if (extractAll || searchFile(tarNode, params->filePaths)) 
 			createFile(archivefd, tarNode);
-		/*
 		else {
 			skipHeader(archivefd);
 			skipContents(archivefd, tarNode);
 		}
-		*/
 		tarNode = tarNode->next;
 	}
 	return 0;
@@ -275,6 +268,7 @@ static int createREGTYPE(int archivefd, TarNode *tarNode)
 	int trailingNulls = countTrailingNulls(buffer, contentsSize);
 
 	int filefd = open(tarNode->header->name, O_WRONLY | O_CREAT | O_TRUNC);
+	printf("filename: %s, filefd: %d\n", tarNode->header->name, filefd);
 	setFileInfo(tarNode->header->name, tarNode);
 	return write(filefd, buffer, contentsSize - trailingNulls);
 }
