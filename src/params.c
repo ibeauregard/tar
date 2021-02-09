@@ -3,16 +3,11 @@
 #include "utils/_stdio.h"
 #include "argparsing/path_node.h"
 #include "constants.h"
+#include "error.h"
 #include <stdlib.h>
 #include <unistd.h>
 
 #define OPTION_PREFIX '-'
-#define SEVERAL_OPTION_ERR_MESSAGE "my_tar: You may not specify more than one '-ctrux' option\n"
-#define INVALID_OPTION_ERR_MESSAGE "my_tar: invalid option -- '%c'\n"
-#define ARG_REQUIRED_ERR_MESSAGE "my_tar: option requires an argument -- '%c'\n"
-#define MODE_UNDEFINED_ERR_MESSAGE "my_tar: You must specify one of the '-ctrux' options\n"
-#define EMPTY_ARCHIVE_CREATION_ERR_MESSAGE "my_tar: Cowardly refusing to create an empty archive\n"
-#define OPTION_INCOMPATIBILITY_ERR_MESSAGE "my_tar: Options '-ru' are incompatible with '-f -'\n"
 
 typedef struct s_params_wrapper
 {
@@ -93,8 +88,7 @@ int handleOptions(char* options, ParamsWrapper *wrapper)
 		case 'x':
 			return setMode(X, wrapper, options);
 		default:
-			_dprintf(STDERR_FILENO, INVALID_OPTION_ERR_MESSAGE, options[0]);
-			return EXIT_FAILURE;
+			return errorCharArg(INVALID_OPTION_ERR, options[0]);
 	}
 }
 
@@ -110,8 +104,7 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 int setMode(Mode mode, ParamsWrapper *wrapper, char *options)
 {
 	if (wrapper->params->mode && wrapper->params->mode != mode) {
-		_dprintf(STDERR_FILENO, "%s", SEVERAL_OPTION_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", SEVERAL_OPTION_ERR);
 	}
 	wrapper->params->mode = mode;
 	return handleOptions(options + 1, wrapper);
@@ -133,24 +126,20 @@ int validate(const ParamsWrapper *wrapper)
 	}
 	Params *params = wrapper->params;
 	if (!params->mode) {
-		_dprintf(STDERR_FILENO, "%s", MODE_UNDEFINED_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", MODE_UNDEFINED_ERR);
 	}
 	if (params->mode == C && !params->filePaths) {
-		_dprintf(STDERR_FILENO, "%s", EMPTY_ARCHIVE_CREATION_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", EMPTY_ARCHIVE_CREATION_ERR);
 	}
 	if ((params->mode == R || params->mode == U) && !_strcmp(params->archivePath, STDOUT_PATH)) {
-		_dprintf(STDERR_FILENO, "%s", OPTION_INCOMPATIBILITY_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", OPTION_INCOMPATIBILITY_ERR);
 	}
 	return EXIT_SUCCESS;
 }
 
 int argRequiredError(char option)
 {
-	_dprintf(STDERR_FILENO, ARG_REQUIRED_ERR_MESSAGE, option);
-	return EXIT_FAILURE;
+	return errorCharArg(ARG_REQUIRED_ERR, option);
 }
 
 int cleanupAfterFailure(Params *params)
