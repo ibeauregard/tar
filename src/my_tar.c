@@ -1,6 +1,6 @@
-#include "argparsing/params.h"
+#include "params.h"
 #include "modes.h"
-#include "error/error.h"
+#include "error.h"
 #include <stdlib.h>
 
 int my_tar(int n_arguments, char **arguments)

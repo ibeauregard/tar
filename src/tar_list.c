@@ -1,6 +1,6 @@
 #include "tar_list.h"
 #include "archive.h"
-#include "error/error.h"
+#include "error.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>

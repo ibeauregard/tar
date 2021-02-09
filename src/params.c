@@ -1,8 +1,8 @@
 #include "params.h"
-#include "../utils/_string.h"
-#include "../utils/_stdio.h"
-#include "path_node.h"
-#include "../constants.h"
+#include "utils/_string.h"
+#include "utils/_stdio.h"
+#include "argparsing/path_node.h"
+#include "constants.h"
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -150,5 +150,15 @@ int validate(const ParamsWrapper *wrapper)
 int argRequiredError(char option)
 {
 	_dprintf(STDERR_FILENO, ARG_REQUIRED_ERR_MESSAGE, option);
+	return EXIT_FAILURE;
+}
+
+int cleanupAfterFailure(Params *params)
+{
+	while (params->filePaths) {
+		PathNode *current = params->filePaths;
+		params->filePaths = current->next;
+		free(current);
+	}
 	return EXIT_FAILURE;
 }

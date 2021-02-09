@@ -2,7 +2,7 @@
 #include "tar_header.h"
 #include "utils/_string.h"
 #include "header_data.h"
-#include "error/error.h"
+#include "error.h"
 #include "tar_list.h"
 #include <stdlib.h>
 #include <dirent.h>
