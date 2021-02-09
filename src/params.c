@@ -1,11 +1,9 @@
 #include "params.h"
 #include "utils/_string.h"
-#include "utils/_stdio.h"
 #include "argparsing/path_node.h"
 #include "constants.h"
 #include "error.h"
 #include <stdlib.h>
-#include <unistd.h>
 
 #define OPTION_PREFIX '-'
 
