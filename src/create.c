@@ -54,10 +54,8 @@ bool needsUpdate(const char *path, time_t mtime, TarNode *existingHeaders)
 		PosixHeader *header = existingHeaders->header;
 		char headerName[255];
 		getNameFromHeader(header, headerName);
-		if (_strcmp(path, headerName)) {
-			continue;
-		}
-		if (mtime <= getMtimeFromHeader(header)) {
+		if (!_strcmp(headerName, path)
+			&& getMtimeFromHeader(header) >= mtime) {
 			return false;
 		}
 		existingHeaders = existingHeaders->next;
