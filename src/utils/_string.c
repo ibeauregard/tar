@@ -20,7 +20,12 @@ int _strcmp (const char* str1, const char* str2)
 
 int _strncmp (const char* str1, const char* str2, int n)
 {
-	for (int i = 0; i < n && *str1 && *str2 && *str1 == *str2; str1++, str2++, i++);
+	int i = 0;
+	for (; i < n && *str1 && *str2 && *str1 == *str2; str1++, str2++, i++);
+	if (i >= n) {
+		str1--;
+		str2--;
+	}
 	return *str1 - *str2;
 }
 
