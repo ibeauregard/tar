@@ -11,6 +11,7 @@ typedef struct s_params
 	PathNode *filePaths;
 } Params;
 
+Params getNewParams();
 int parseArguments(int n_arguments, char **arguments, Params *params);
 
 #endif

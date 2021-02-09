@@ -22,7 +22,6 @@ typedef struct s_params_wrapper
 } ParamsWrapper;
 
 static void initializeWrapper(ParamsWrapper *wrapper, Params *params);
-static void initialize(Params *params);
 static int handleArgument(char *argument, ParamsWrapper *wrapper);
 static int handleOptions(char* options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
@@ -30,6 +29,16 @@ static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
 static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int argRequiredError(char option);
+
+Params getNewParams()
+{
+	Params params = {
+		.archivePath = STDOUT_PATH,
+		.mode = UNDEFINED,
+		.filePaths = NULL
+	};
+	return params;
+}
 
 int parseArguments(int n_arguments, char **arguments, Params *params)
 {
@@ -45,17 +54,9 @@ int parseArguments(int n_arguments, char **arguments, Params *params)
 
 void initializeWrapper(ParamsWrapper *wrapper, Params *params)
 {
-	initialize(params);
 	wrapper->params = params;
 	wrapper->last = NULL;
 	wrapper->fArgExpected = false;
-}
-
-void initialize(Params *params)
-{
-	params->mode = UNDEFINED;
-	params->archivePath = STDOUT_PATH;
-	params->filePaths = NULL;
 }
 
 int handleArgument(char *argument, ParamsWrapper *wrapper)
