@@ -6,17 +6,20 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
+#define HEADER_DATA_NAME_SIZE 255
+#define HEADER_DATA_LINKNAME_SIZE 100
+
 typedef struct stat Stat;
 
 typedef struct s_HeaderData {
-	char name[255];
+	char name[HEADER_DATA_NAME_SIZE];
 	unsigned short permissions;
 	uid_t uid;
 	gid_t gid;
 	off_t size;
 	time_t mtime;
 	char type;
-	char linkname[100];
+	char linkname[HEADER_DATA_LINKNAME_SIZE];
 	dev_t deviceNumber;
 	ino_t inodeNumber;
 } HeaderData;

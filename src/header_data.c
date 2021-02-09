@@ -43,7 +43,7 @@ HeaderData *fromLinkAndPath(HeaderData *link, char *path)
 {
 	HeaderData *headerData = malloc(sizeof (HeaderData));
 	headerData->type = LNKTYPE;
-	_strncpy(headerData->name, path, 255);
+	_strncpy(headerData->name, path, HEADER_DATA_NAME_SIZE);
 	headerData->permissions = link->permissions;
 	headerData->uid = link->uid;
 	headerData->gid = link->gid;
@@ -77,7 +77,7 @@ char getFileType(mode_t mode)
 
 void setFileName(HeaderData *headerData, char *path)
 {
-	_strncpy(headerData->name, path, 255);
+	_strncpy(headerData->name, path, HEADER_DATA_NAME_SIZE);
 	if (headerData->type != DIRTYPE) {
 		return;
 	}
@@ -94,10 +94,10 @@ void setLinkName(HeaderData *headerData, char *name)
 {
 	int i = 0;
 	if (headerData->type == SYMTYPE) {
-		i = readlink(name, headerData->linkname, 100);
+		i = readlink(name, headerData->linkname, HEADER_DATA_LINKNAME_SIZE);
 	} else if (headerData->type == LNKTYPE) {
 		unsigned int nameLength = _strlen(name);
-		i = nameLength > 99 ? 99 : nameLength;
+		i = nameLength > HEADER_DATA_LINKNAME_SIZE - 1 ? HEADER_DATA_LINKNAME_SIZE - 1 : nameLength;
 		_strncpy(headerData->linkname, name, i);
 	}
 	headerData->linkname[i] = 0;

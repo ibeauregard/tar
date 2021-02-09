@@ -52,7 +52,7 @@ bool needsUpdate(const char *path, time_t mtime, TarNode *existingHeaders)
 {
 	while (existingHeaders) {
 		PosixHeader *header = existingHeaders->header;
-		char headerName[255];
+		char headerName[HEADER_DATA_NAME_SIZE];
 		getNameFromHeader(header, headerName);
 		if (!_strcmp(headerName, path)
 			&& getMtimeFromHeader(header) >= mtime) {
@@ -114,7 +114,7 @@ int listDirEntries(const HeaderData *dirHeaderData, TarList *list, TarNode *exis
 	return EXIT_SUCCESS;
 }
 
-char* buildPath(char* fullPath, const char* dirPath, const char* name)
+inline char* buildPath(char* fullPath, const char* dirPath, const char* name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
 }
