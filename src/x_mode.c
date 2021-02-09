@@ -13,6 +13,8 @@
 #include "tar_node.h"
 #include "tar_parsing.h"
 
+#define MAXPATH 255
+
 // Functions for parsing tar archive
 static TarNode *newParsedTar();
 static void freeParsedTar(TarNode *parsedTar);
@@ -20,7 +22,6 @@ static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
 static int skipContents(int archivefd, TarNode *lastNode);
-static void printTarNode(TarNode *parsedTar);
 
 // Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
@@ -34,8 +35,6 @@ static int createDIRTYPE(int archivefd, TarNode *tarNode);
 int x_mode(Params *params)
 {
 	TarNode *parsedTar = parseTar(params->archivePath);
-	// (void) parsedTar;
-	printTarNode(parsedTar);
 	extractFiles(params, parsedTar);
 	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
@@ -43,19 +42,18 @@ int x_mode(Params *params)
 
 /* Function: Prints out contents of TarNode for debugging
  * -------------------------------------------------------
- */
 static void printTarNode(TarNode *parsedTar)
 {
+	printf("Test\n");
 	while (parsedTar) {
 		printf("name: %s\n", parsedTar->header->name);
-		// write(1, parsedTar->contents, BLOCKSIZE);
-		printf("\n");
 		parsedTar = parsedTar->next;
 	}
 }
+*/
 
 /* Function: Parses .tar archive into struct TarNode for individual files
- * ------------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  * parsedTar() parses all the headers of a tar archive and holds it in a  
  * TarNode structure. Each TarNode struct holds the header of a single file
  * along with a pointer to the next TarNode. Returns head of linked list.
@@ -188,17 +186,44 @@ static int skipContents(int archivefd, TarNode *tarNode)
 	return contentSize;
 }
 
+/*
+ * P1: Need to extract parent directories (not just the files themselves)
+ * S1: Check for '/' in arg name and compare interim pathnames
+ * P2: Folder names in arg list (filePaths) may or may not end in '/'
+ * P3: If a folder is specified, all nested files / directories are extracted too
+ * S3: 
+ */
+
+/* Function: Returns 1 if tarNode matches a filePaths or any of its parent dirs
+ * ----------------------------------------------------------------------------
+ */
 static int searchFile(TarNode *tarNode, PathNode *filePaths)
 {
-	char *pathName = filePaths->path;
-	int nameLength = _strlen(pathName);
+	char *argName = filePaths->path;
+	char *tarName = tarNode->header->name;
+	// Loop through args of files that we want to extract
 	while (filePaths) {
-		if (!_strncmp(tarNode->header->name, pathName, nameLength)) 
+		char buffer[MAXPATH] = { '\0' };
+		int i;
+		// Check if tarNode matches parent dir of any of the args
+		for (i = 0; i < (int) _strlen(argName); i++) {
+			buffer[i] = *(argName + i);
+			if (*(argName + i) == '/') {
+				if (!_strncmp(tarName, buffer, _strlen(argName))) {
+					printf("tarName: %s, argName: %s, len: %ld\n", 
+						tarName, argName, _strlen(argName));
+					return 1;
+				}
+			}
+		}
+		// printf("tarName: %s, argName: %s\n", tarName, argName);
+		if (!_strcmp(tarName, argName)) 
 			return 1;
 		filePaths = filePaths->next;
 	}
 	return 0;
 }
+
 /* Function: Extract all files in tar archive
  * ------------------------------------------
  */
@@ -207,9 +232,9 @@ static int extractFiles(Params *params, TarNode *tarNode)
 	int archivefd = open(params->archivePath, O_RDONLY);
 	int extractAll = (params->filePaths == NULL);
 	while (tarNode) {
-		if (extractAll || searchFile(tarNode, params->filePaths)) 
+		if (extractAll || searchFile(tarNode, params->filePaths)) {
 			createFile(archivefd, tarNode);
-		else {
+		} else {
 			skipHeader(archivefd);
 			skipContents(archivefd, tarNode);
 		}
@@ -242,6 +267,7 @@ static void createFile(int archivefd, TarNode *tarNode)
 	}
 }
 
+
 static int countTrailingNulls(char *buffer, int contentsSize)
 {
 	int countNulls = 0;
@@ -268,7 +294,6 @@ static int createREGTYPE(int archivefd, TarNode *tarNode)
 	int trailingNulls = countTrailingNulls(buffer, contentsSize);
 
 	int filefd = open(tarNode->header->name, O_WRONLY | O_CREAT | O_TRUNC);
-	printf("filename: %s, filefd: %d\n", tarNode->header->name, filefd);
 	setFileInfo(tarNode->header->name, tarNode);
 	return write(filefd, buffer, contentsSize - trailingNulls);
 }
@@ -279,6 +304,8 @@ static int createLNKTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (link(srcPath, lnkPath) != 0) {
+		dprintf(STDERR_FILENO, "%s: Cannot hard link to '%s'\n", 
+		        lnkPath, srcPath);
 		return -1;
 	}
 	setFileInfo(tarNode->header->name, tarNode);
@@ -291,6 +318,8 @@ static int createSYMTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (symlink(srcPath, lnkPath) != 0) {
+		dprintf(STDERR_FILENO, "%s: Cannot soft link to '%s'\n", 
+		        lnkPath, srcPath);
 		return -1;
 	}
 	setFileInfo(tarNode->header->name, tarNode);
