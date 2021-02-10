@@ -16,6 +16,7 @@
 // Functions for parsing tar archive
 static TarNode *newParsedTar();
 static void freeParsedTar(TarNode *parsedTar);
+static int archiveIsEmpty(int archivefd);
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
@@ -36,7 +37,8 @@ static int createDIRTYPE(int archivefd, TarNode *tarNode);
  */ 
 int x_mode(Params *params)
 {
-	TarNode *parsedTar = parseTar(params->archivePath);
+	int status = 0;
+	TarNode *parsedTar = parseTar(params->archivePath, &status);
 	extractFiles(params, parsedTar);
 	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
@@ -48,18 +50,29 @@ int x_mode(Params *params)
  * TarNode structure. Each TarNode struct holds the header of a single file
  * along with a pointer to the next TarNode. Returns head of linked list.
  */ 
-TarNode *parseTar(char *archivePath)
+TarNode *parseTar(char *archivePath, int *status)
 {
 	int archivefd = open(archivePath, O_RDONLY);
 	TarNode *headNode = NULL;
 	TarNode *lastNode = headNode;
+	*status = 0;
+	if (archiveIsEmpty(archivefd))
+		return NULL;
 	do {
-		if (checkEndOfArchive(archivefd))
+		int res;
+		if ((res = checkEndOfArchive(archivefd))) {
+			if (res == -1)
+				*status = 1;
 			break;
-		if (addNode(&headNode, &lastNode) == -1)
+		}
+		if (addNode(&headNode, &lastNode) == -1) {
+			*status = 1;
 			return NULL;
-		if (parseHeader(archivefd, lastNode) == -1)
+		}
+		if (parseHeader(archivefd, lastNode) == -1) {
+			*status = 1;
 			return NULL;
+		}
 		skipContents(archivefd, lastNode);
 	} while (true);
 	return headNode;
@@ -86,6 +99,18 @@ static void freeParsedTar(TarNode *parsedTar)
 	}
 }
 
+/* Function: Checks if file pointed to by archivefd is empty
+ * ---------------------------------------------------------
+ */
+static int archiveIsEmpty(int archivefd)
+{
+	int returnValue = 0;
+	if (lseek(archivefd, 0, SEEK_END) == 0)
+		returnValue = 1;
+	lseek(archivefd, 0, SEEK_SET);
+	return returnValue;
+}
+
 /* Function: Checks if next BLOCKSIZE * 2 bytes are null
  * -----------------------------------------------------
  * .tar archives terminate their archives with 2 blocks of null bytes.
@@ -97,7 +122,7 @@ static int checkEndOfArchive(int archivefd)
 	char nextTwoBlocks[BLOCKSIZE * 2 + 1] = { '\0' };
 	int bytesRead = read(archivefd, nextTwoBlocks, BLOCKSIZE * 2);
 	if (bytesRead < BLOCKSIZE * 2) {
-		dprintf(STDERR_FILENO, "Error: Cannot read 2x BLOCKSIZE bytes\n");
+		dprintf(STDERR_FILENO, "Error: Cannot check end of archive\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
@@ -161,7 +186,8 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 		return -1;
 	}
 	if (_strtol(header->chksum, NULL, 8) != computeChecksum(header)) {
-		dprintf(STDERR_FILENO, "Error: CheckSum does not match \n");
+		dprintf(STDERR_FILENO, 
+		        "Error: chksum does not match, may be invalid archive.\n");
 		return -1;
 	}
 	return bytesRead;

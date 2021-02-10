@@ -3,6 +3,6 @@
 
 #include "tar_node.h"
 
-TarNode *parseTar(char *archivePath);
+TarNode *parseTar(char *archivePath, int *status);
 
 #endif
