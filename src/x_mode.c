@@ -186,37 +186,42 @@ static int skipContents(int archivefd, TarNode *tarNode)
 	return contentSize;
 }
 
-/*
- * P1: Need to extract parent directories (not just the files themselves)
- * S1: Check for '/' in arg name and compare interim pathnames
- * P2: Folder names in arg list (filePaths) may or may not end in '/'
- * P3: If a folder is specified, all nested files / directories are extracted too
- * S3: 
- */
-
-/* Function: Returns 1 if tarNode matches a filePaths or any of its parent dirs
- * ----------------------------------------------------------------------------
+/* Function: Returns 1 if file in tarNode ought to be extracted based on filePath
+ * ------------------------------------------------------------------------------
+ * NTD: This function is messy because it has to match a bunch of edge cases
+ * and I'm not sure if there's a cleaner way of doing it.
  */
 static int searchFile(TarNode *tarNode, PathNode *filePaths)
 {
 	char *argName = filePaths->path;
 	char *tarName = tarNode->header->name;
-	// Loop through args of files that we want to extract
 	while (filePaths) {
 		char buffer[MAXPATH] = { '\0' };
 		int i;
-		// Check if tarNode matches parent dir of any of the args
-		for (i = 0; i < (int) _strlen(argName); i++) {
+		// We have this loop here so that parent dirs in pathname
+		// of filePath will be found and created
+		for (i = 0; i < (int) _strlen(argName) + 1; i++) {
 			buffer[i] = *(argName + i);
 			if (*(argName + i) == '/') {
 				if (!_strncmp(tarName, buffer, _strlen(argName))) {
-					printf("tarName: %s, argName: %s, len: %ld\n", 
-						tarName, argName, _strlen(argName));
 					return 1;
 				}
 			}
+			// We have this here so that if dir in filePath arg 
+			// does not contains '/', it will still match 
+			if (*(tarName + i) == '/' && *(argName + i) == '\0') {
+				if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+					return 1;
+			}
+			// We have this block if filePath ends in '/' and
+			// is referencing a file that doesn't end in '/'
+			if (*(argName + i - 1) == '/' && *(tarName + i - 1) == '\0') {
+				if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+					return 1;
+			}
 		}
-		// printf("tarName: %s, argName: %s\n", tarName, argName);
+		// We have this block if filePath doesn't end in '/'
+		// and is referencing a file that doesn't end in '/'
 		if (!_strcmp(tarName, argName)) 
 			return 1;
 		filePaths = filePaths->next;
