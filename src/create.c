@@ -2,7 +2,7 @@
 #include "tar_header.h"
 #include "utils/_string.h"
 #include "header_data.h"
-#include "error/error.h"
+#include "error.h"
 #include "tar_list.h"
 #include <stdlib.h>
 #include <dirent.h>
@@ -52,12 +52,10 @@ bool needsUpdate(const char *path, time_t mtime, TarNode *existingHeaders)
 {
 	while (existingHeaders) {
 		PosixHeader *header = existingHeaders->header;
-		char headerName[255];
+		char headerName[HEADER_DATA_NAME_SIZE];
 		getNameFromHeader(header, headerName);
-		if (_strcmp(path, headerName)) {
-			continue;
-		}
-		if (mtime <= getMtimeFromHeader(header)) {
+		if (!_strcmp(headerName, path)
+			&& getMtimeFromHeader(header) >= mtime) {
 			return false;
 		}
 		existingHeaders = existingHeaders->next;
@@ -116,7 +114,7 @@ int listDirEntries(const HeaderData *dirHeaderData, TarList *list, TarNode *exis
 	return EXIT_SUCCESS;
 }
 
-char* buildPath(char* fullPath, const char* dirPath, const char* name)
+inline char* buildPath(char* fullPath, const char* dirPath, const char* name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
 }

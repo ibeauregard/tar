@@ -2,7 +2,7 @@
 #include "utils/_string.h"
 #include "fcntl.h"
 #include "constants.h"
-#include "error/error.h"
+#include "error.h"
 #include "tar_header.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -29,26 +29,12 @@ int initArchive(Archive *archive, const char *archivePath, bool append)
 	return EXIT_SUCCESS;
 }
 
-int appendEnd(Archive *archive)
-{
-	char blocks[END_OF_ARCHIVE_SIZE] = {0};
-	if (write(archive->fd, blocks, END_OF_ARCHIVE_SIZE) == SYSCALL_ERR_CODE) {
-		return error(CANT_WRITE_ERR, archive->path);
-	}
-	return EXIT_SUCCESS;
-}
-
-int finalizeArchive(Archive *archive)
-{
-	return close(archive->fd);
-}
-
 int getArchiveFd(const char *archivePath, bool append)
 {
-	if (_strcmp(archivePath, STDOUT_PATH)) {
-		return open(archivePath, getArchiveFlags(append), ARCHIVE_MODE);
+	if (!_strcmp(archivePath, STDOUT_PATH)) {
+		return STDOUT_FILENO;
 	}
-	return STDOUT_FILENO;
+	return open(archivePath, getArchiveFlags(append), ARCHIVE_MODE);
 }
 
 inline int getArchiveFlags(bool append)
@@ -64,8 +50,6 @@ void offsetToAppend(int archiveFd)
 	if (!archiveStat.st_size) {
 		return;
 	}
-	// This is a non-empty valid archive
-	// position myself two blocks before the end
 	off_t offset = lseek(archiveFd, -END_OF_ARCHIVE_SIZE, SEEK_END);
 	char buffer[BLOCKSIZE];
 	const char nullBlock[BLOCKSIZE] = {0};
@@ -77,4 +61,18 @@ void offsetToAppend(int archiveFd)
 		}
 		offset = lseek(archiveFd, -BLOCKSIZE, SEEK_CUR);
 	}
+}
+
+int appendEnd(Archive *archive)
+{
+	char blocks[END_OF_ARCHIVE_SIZE] = {0};
+	if (write(archive->fd, blocks, END_OF_ARCHIVE_SIZE) == SYSCALL_ERR_CODE) {
+		return error(CANT_WRITE_ERR, archive->path);
+	}
+	return EXIT_SUCCESS;
+}
+
+int finalizeArchive(Archive *archive)
+{
+	return close(archive->fd);
 }

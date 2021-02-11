@@ -1,13 +1,11 @@
-#include "utils/_stdio.h"
-#include "argparsing/params.h"
-#include <stdlib.h>
-#include <unistd.h>
+#include "params.h"
 #include "modes.h"
-#include "error/error.h"
+#include "error.h"
+#include <stdlib.h>
 
 int my_tar(int n_arguments, char **arguments)
 {
-	Params params;
+	Params params = getNewParams();
 	if (parseArguments(n_arguments, arguments, &params)) {
 		return cleanupAfterFailure(&params);
 	}
@@ -29,10 +27,10 @@ int my_tar(int n_arguments, char **arguments)
 			status = x_mode(&params);
 			break;
 		default:
-			status = error("%s", PARSE_ERROR_MESSAGE);
+			status = error("%s", PARSE_ERR);
 	}
 	if (status) {
-		error("%s", PREVIOUS_ERROR_MESSAGE);
+		error("%s", PREVIOUS_ERR);
 		return cleanupAfterFailure(&params);
 	}
 	return EXIT_SUCCESS;

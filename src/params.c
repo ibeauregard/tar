@@ -1,18 +1,11 @@
 #include "params.h"
-#include "../utils/_string.h"
-#include "../utils/_stdio.h"
-#include "path_node.h"
-#include "../constants.h"
+#include "utils/_string.h"
+#include "argparsing/path_node.h"
+#include "constants.h"
+#include "error.h"
 #include <stdlib.h>
-#include <unistd.h>
 
 #define OPTION_PREFIX '-'
-#define SEVERAL_OPTION_ERR_MESSAGE "my_tar: You may not specify more than one '-ctrux' option\n"
-#define INVALID_OPTION_ERR_MESSAGE "my_tar: invalid option -- '%c'\n"
-#define ARG_REQUIRED_ERR_MESSAGE "my_tar: option requires an argument -- '%c'\n"
-#define MODE_UNDEFINED_ERR_MESSAGE "my_tar: You must specify one of the '-ctrux' options\n"
-#define EMPTY_ARCHIVE_CREATION_ERR_MESSAGE "my_tar: Cowardly refusing to create an empty archive\n"
-#define OPTION_INCOMPATIBILITY_ERR_MESSAGE "my_tar: Options '-ru' are incompatible with '-f -'\n"
 
 typedef struct s_params_wrapper
 {
@@ -21,8 +14,7 @@ typedef struct s_params_wrapper
 	bool fArgExpected;
 } ParamsWrapper;
 
-static void initializeWrapper(ParamsWrapper *wrapper, Params *params);
-static void initialize(Params *params);
+static ParamsWrapper getNewParamsWrapper(Params *params);
 static int handleArgument(char *argument, ParamsWrapper *wrapper);
 static int handleOptions(char* options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
@@ -31,10 +23,19 @@ static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int argRequiredError(char option);
 
+Params getNewParams()
+{
+	Params params = {
+		.archivePath = STDOUT_PATH,
+		.mode = UNDEFINED,
+		.filePaths = NULL
+	};
+	return params;
+}
+
 int parseArguments(int n_arguments, char **arguments, Params *params)
 {
-	ParamsWrapper wrapper;
-	initializeWrapper(&wrapper, params);
+	ParamsWrapper wrapper = getNewParamsWrapper(params);
 	for (int i = 0; i < n_arguments; i++) {
 		if (handleArgument(arguments[i], &wrapper)) {
 			return EXIT_FAILURE;
@@ -43,19 +44,14 @@ int parseArguments(int n_arguments, char **arguments, Params *params)
 	return validate(&wrapper);
 }
 
-void initializeWrapper(ParamsWrapper *wrapper, Params *params)
+ParamsWrapper getNewParamsWrapper(Params *params)
 {
-	initialize(params);
-	wrapper->params = params;
-	wrapper->last = NULL;
-	wrapper->fArgExpected = false;
-}
-
-void initialize(Params *params)
-{
-	params->mode = UNDEFINED;
-	params->archivePath = STDOUT_PATH;
-	params->filePaths = NULL;
+	ParamsWrapper wrapper = {
+		.params = params,
+		.last = NULL,
+		.fArgExpected = false
+	};
+	return wrapper;
 }
 
 int handleArgument(char *argument, ParamsWrapper *wrapper)
@@ -90,8 +86,7 @@ int handleOptions(char* options, ParamsWrapper *wrapper)
 		case 'x':
 			return setMode(X, wrapper, options);
 		default:
-			_dprintf(STDERR_FILENO, INVALID_OPTION_ERR_MESSAGE, options[0]);
-			return EXIT_FAILURE;
+			return errorCharArg(INVALID_OPTION_ERR, options[0]);
 	}
 }
 
@@ -107,8 +102,7 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 int setMode(Mode mode, ParamsWrapper *wrapper, char *options)
 {
 	if (wrapper->params->mode && wrapper->params->mode != mode) {
-		_dprintf(STDERR_FILENO, "%s", SEVERAL_OPTION_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", SEVERAL_OPTION_ERR);
 	}
 	wrapper->params->mode = mode;
 	return handleOptions(options + 1, wrapper);
@@ -130,22 +124,28 @@ int validate(const ParamsWrapper *wrapper)
 	}
 	Params *params = wrapper->params;
 	if (!params->mode) {
-		_dprintf(STDERR_FILENO, "%s", MODE_UNDEFINED_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", MODE_UNDEFINED_ERR);
 	}
 	if (params->mode == C && !params->filePaths) {
-		_dprintf(STDERR_FILENO, "%s", EMPTY_ARCHIVE_CREATION_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", EMPTY_ARCHIVE_CREATION_ERR);
 	}
 	if ((params->mode == R || params->mode == U) && !_strcmp(params->archivePath, STDOUT_PATH)) {
-		_dprintf(STDERR_FILENO, "%s", OPTION_INCOMPATIBILITY_ERR_MESSAGE);
-		return EXIT_FAILURE;
+		return error("%s", OPTION_INCOMPATIBILITY_ERR);
 	}
 	return EXIT_SUCCESS;
 }
 
 int argRequiredError(char option)
 {
-	_dprintf(STDERR_FILENO, ARG_REQUIRED_ERR_MESSAGE, option);
+	return errorCharArg(ARG_REQUIRED_ERR, option);
+}
+
+int cleanupAfterFailure(Params *params)
+{
+	while (params->filePaths) {
+		PathNode *current = params->filePaths;
+		params->filePaths = current->next;
+		free(current);
+	}
 	return EXIT_FAILURE;
 }

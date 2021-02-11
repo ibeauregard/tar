@@ -1,8 +1,8 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 
-#include "path_node.h"
-#include "../mode.h"
+#include "argparsing/path_node.h"
+#include "mode.h"
 
 typedef struct s_params
 {
@@ -11,6 +11,8 @@ typedef struct s_params
 	PathNode *filePaths;
 } Params;
 
+Params getNewParams();
 int parseArguments(int n_arguments, char **arguments, Params *params);
+int cleanupAfterFailure(Params *params);
 
 #endif

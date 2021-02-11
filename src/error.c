@@ -1,5 +1,5 @@
 #include "error.h"
-#include "../utils/_stdio.h"
+#include "utils/_stdio.h"
 #include "stdlib.h"
 #include <unistd.h>
 
@@ -9,12 +9,8 @@ int error(const char *message, const char *messageArg)
 	return EXIT_FAILURE;
 }
 
-int cleanupAfterFailure(Params *params)
+int errorCharArg(const char *message, char messageArg)
 {
-	while (params->filePaths) {
-		PathNode *current = params->filePaths;
-		params->filePaths = current->next;
-		free(current);
-	}
+	_dprintf(STDERR_FILENO, message, messageArg);
 	return EXIT_FAILURE;
 }

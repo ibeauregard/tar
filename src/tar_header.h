@@ -6,41 +6,55 @@
 /* tar Header Block, from POSIX 1003.1-1990.  */
 
 #define BLOCKSIZE 512
+#define HEADER_NAME_SIZE 100
+#define HEADER_MODE_SIZE 8
+#define HEADER_UID_SIZE 8
+#define HEADER_GID_SIZE 8
+#define HEADER_SIZE_SIZE 12
+#define HEADER_MTIME_SIZE 12
+#define HEADER_CHKSUM_SIZE 8
+#define HEADER_LINKNAME_SIZE 100
+#define HEADER_MAGIC_SIZE 6
+#define HEADER_VERSION_SIZE 2
+#define HEADER_UNAME_SIZE 32
+#define HEADER_GNAME_SIZE 32
+#define HEADER_DEVMAJOR_SIZE 8
+#define HEADER_DEVMINOR_SIZE 8
+#define HEADER_PREFIX_SIZE 155
+#define HEADER_ZEROS_SIZE 12
 
 /* POSIX header. */
 
 typedef struct posix_header
-{                              /* byte offset */
-	char name[100];               /*   0 */
-	char mode[8];                 /* 100 */
-	char uid[8];                  /* 108 */
-	char gid[8];                  /* 116 */
-	char size[12];                /* 124 */
-	char mtime[12];               /* 136 */
-	char chksum[8];               /* 148 */
-	char typeflag;                /* 156 */
-	char linkname[100];           /* 157 */
-	char magic[6];                /* 257 */
-	char version[2];              /* 263 */
-	char uname[32];               /* 265 */
-	char gname[32];               /* 297 */
-	char devmajor[8];             /* 329 */
-	char devminor[8];             /* 337 */
-	char prefix[155];             /* 345 */
-	char zeros[12];               /* 500 */
-	/* 512 */
+{                                              /* byte offset */
+	char name[HEADER_NAME_SIZE];               /*   0 */
+	char mode[HEADER_MODE_SIZE];               /* 100 */
+	char uid[HEADER_UID_SIZE];                 /* 108 */
+	char gid[HEADER_GID_SIZE];                 /* 116 */
+	char size[HEADER_SIZE_SIZE];               /* 124 */
+	char mtime[HEADER_MTIME_SIZE];             /* 136 */
+	char chksum[HEADER_CHKSUM_SIZE];           /* 148 */
+	char typeflag;                             /* 156 */
+	char linkname[HEADER_LINKNAME_SIZE];       /* 157 */
+	char magic[HEADER_MAGIC_SIZE];             /* 257 */
+	char version[HEADER_VERSION_SIZE];         /* 263 */
+	char uname[HEADER_UNAME_SIZE];             /* 265 */
+	char gname[HEADER_GNAME_SIZE];             /* 297 */
+	char devmajor[HEADER_DEVMAJOR_SIZE];       /* 329 */
+	char devminor[HEADER_DEVMINOR_SIZE];       /* 337 */
+	char prefix[HEADER_PREFIX_SIZE];           /* 345 */
+	char zeros[HEADER_ZEROS_SIZE];             /* 500 */
+	                                           /* 512 */
 } PosixHeader;
 
 PosixHeader getZeroFilledPosixHeader();
-PosixHeader *getFilledHeader(const HeaderData *headerData, PosixHeader *header);
+PosixHeader *getHeaderFromData(const HeaderData *headerData, PosixHeader *header);
 unsigned int computeChecksum(PosixHeader *header);
 char *getNameFromHeader(PosixHeader *header, char *dest);
 long getMtimeFromHeader(PosixHeader *header);
 
 #define TMAGIC   "ustar "        /* ustar and a null */
-#define TMAGLEN  6
 #define TVERSION " "           /* 00 and no null */
-#define TVERSLEN 2
 
 /* Values used in typeflag field.  */
 #define REGTYPE  '0'            /* regular file */

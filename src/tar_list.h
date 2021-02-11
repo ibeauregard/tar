@@ -2,7 +2,7 @@
 #define TAR_LIST_H
 
 #include "tar_node.h"
-#include "argparsing/params.h"
+#include "params.h"
 
 typedef struct {
 	TarNode *const first;

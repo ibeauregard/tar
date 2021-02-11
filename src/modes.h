@@ -1,7 +1,7 @@
 #ifndef MODES_H
 #define MODES_H
 
-#include "argparsing/params.h"
+#include "params.h"
 
 int c_mode(Params *params);
 int r_mode(Params *params);

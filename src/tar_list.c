@@ -1,6 +1,6 @@
 #include "tar_list.h"
 #include "archive.h"
-#include "error/error.h"
+#include "error.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -40,7 +40,7 @@ int dumpToArchive(TarList *list, const Params *params, bool append)
 int dumpHeader(const HeaderData *headerData, const Archive *archive)
 {
 	PosixHeader header = getZeroFilledPosixHeader();
-	if (write(archive->fd, getFilledHeader(headerData, &header), BLOCKSIZE) == SYSCALL_ERR_CODE) {
+	if (write(archive->fd, getHeaderFromData(headerData, &header), BLOCKSIZE) == SYSCALL_ERR_CODE) {
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
@@ -57,15 +57,21 @@ int dumpContent(const HeaderData *headerData, const Archive *archive)
 		return error(CANT_OPEN_FILE_ERR, headerData->name);
 	}
 	zfillLastBlock(buffer, numBlocks);
-	if (read(fd, buffer, numBytes)
-		== SYSCALL_ERR_CODE) {
+	if (read(fd, buffer, numBytes) == SYSCALL_ERR_CODE) {
 		return error(CANT_READ_ERR, headerData->name);
 	}
-	if (write(archive->fd, buffer, numBytes)
-		== SYSCALL_ERR_CODE) {
+	if (write(archive->fd, buffer, numBytes) == SYSCALL_ERR_CODE) {
 		return error(CANT_WRITE_ERR, archive->path);
 	}
 	return EXIT_SUCCESS;
+}
+
+void zfillLastBlock(char *buffer, size_t numBlocks)
+{
+	size_t totalBytes = numBlocks * BLOCKSIZE;
+	for (size_t i = (numBlocks - 1) * BLOCKSIZE; i < totalBytes; i++) {
+		buffer[i] = 0;
+	}
 }
 
 int finalizeTarList(TarList *list)
@@ -78,12 +84,4 @@ int finalizeTarList(TarList *list)
 		free(current);
 	}
 	return EXIT_FAILURE;
-}
-
-void zfillLastBlock(char *buffer, size_t numBlocks)
-{
-	size_t totalBytes = numBlocks * BLOCKSIZE;
-	for (size_t i = (numBlocks - 1) * BLOCKSIZE; i < totalBytes; i++) {
-		buffer[i] = 0;
-	}
 }
