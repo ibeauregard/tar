@@ -84,9 +84,7 @@ void setFileName(HeaderData *headerData, char *path)
 	unsigned char len = _strlen(path);
 	unsigned char numSlashes;
 	for (numSlashes = 0; numSlashes < len && path[len - numSlashes - 1] == PATH_SEP; numSlashes++);
-	if (numSlashes == 0) {
-		headerData->name[len] = PATH_SEP;
-	}
+	headerData->name[len - numSlashes] = PATH_SEP;
 	headerData->name[len - numSlashes + 1] = 0;
 }
 
