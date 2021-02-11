@@ -56,15 +56,16 @@ TarNode *parseTar(char *archivePath, int *status)
 	TarNode *headNode = NULL;
 	TarNode *lastNode = headNode;
 	*status = 0;
-	if (archiveIsEmpty(archivefd))
+	if (archivefd == -1 || archiveIsEmpty(archivefd)) 
 		return NULL;
 	do {
-		int res;
-		if ((res = checkEndOfArchive(archivefd))) {
-			if (res == -1)
-				*status = 1;
+		int res = checkEndOfArchive(archivefd);
+		if (res == -1) {
+			*status = 1;
+			return NULL;
+		} 
+		if (res == 1)
 			break;
-		}
 		if (addNode(&headNode, &lastNode) == -1) {
 			*status = 1;
 			return NULL;
