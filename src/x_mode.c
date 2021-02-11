@@ -1,9 +1,7 @@
-#include <stdio.h>            // For debugging
-#include <stdlib.h>
+#include <stdio.h>            // For dprintf,
+#include <stdlib.h>           // For malloc
 #include <fcntl.h>            // For open
 #include <unistd.h>           // For read, STDERR_FILENO
-// #include <errno.h>            // For strerror?
-// #include <string.h>           // For strerror
 
 #include "tar_header.h"
 #include "header_data.h"
@@ -13,66 +11,69 @@
 #include "tar_node.h"
 #include "tar_parsing.h"
 
+#define MAXPATH 255
+
 // Functions for parsing tar archive
 static TarNode *newParsedTar();
+static void freeParsedTar(TarNode *parsedTar);
+static int archiveIsEmpty(int archivefd);
 static int checkEndOfArchive(int archivefd);
 static int addNode(TarNode **headNode, TarNode **lastNode);
 static int parseHeader(int archivefd, TarNode *lastNode);
 static int skipContents(int archivefd, TarNode *lastNode);
-static void printTarNode(TarNode *parsedTar);
 
 // Functions for creating files
 static int extractFiles(Params *params, TarNode *parsedTar);
-static int searchFile(TarNode *tarNode, PathNode *PathNode);
+static int shouldExtract(TarNode *tarNode, PathNode *PathNode);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
 static int createSYMTYPE(int archivefd, TarNode *tarNode);
 static int createDIRTYPE(int archivefd, TarNode *tarNode);
 
+/* Function: Main function for x-mode
+ * ----------------------------------
+ * Parses tar achive and then extracts /creates all relevant files
+ */ 
 int x_mode(Params *params)
 {
-	TarNode *parsedTar = parseTar(params->archivePath);
-	(void) parsedTar;
-	printTarNode(parsedTar);
+	int status = 0;
+	TarNode *parsedTar = parseTar(params->archivePath, &status);
 	extractFiles(params, parsedTar);
-	/*
 	freeParsedTar(parsedTar);
-	*/
 	return EXIT_SUCCESS;
 }
 
-/* Function: Prints out contents of TarNode for debugging
- * -------------------------------------------------------
- */
-static void printTarNode(TarNode *parsedTar)
-{
-	while (parsedTar) {
-		printf("name: %s\n", parsedTar->header->name);
-		// write(1, parsedTar->contents, BLOCKSIZE);
-		printf("\n");
-		parsedTar = parsedTar->next;
-	}
-}
-
 /* Function: Parses .tar archive into struct TarNode for individual files
- * ------------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  * parsedTar() parses all the headers of a tar archive and holds it in a  
  * TarNode structure. Each TarNode struct holds the header of a single file
  * along with a pointer to the next TarNode. Returns head of linked list.
  */ 
-TarNode *parseTar(char *archivePath)
+TarNode *parseTar(char *archivePath, int *status)
 {
 	int archivefd = open(archivePath, O_RDONLY);
 	TarNode *headNode = NULL;
 	TarNode *lastNode = headNode;
+	*status = 0;
+	if (archivefd == -1 || archiveIsEmpty(archivefd)) 
+		return NULL;
 	do {
-		if (checkEndOfArchive(archivefd))
+		int res = checkEndOfArchive(archivefd);
+		if (res == -1) {
+			*status = 1;
+			return NULL;
+		} 
+		if (res == 1)
 			break;
-		if (addNode(&headNode, &lastNode) == -1)
+		if (addNode(&headNode, &lastNode) == -1) {
+			*status = 1;
 			return NULL;
-		if (parseHeader(archivefd, lastNode) == -1)
+		}
+		if (parseHeader(archivefd, lastNode) == -1) {
+			*status = 1;
 			return NULL;
+		}
 		skipContents(archivefd, lastNode);
 	} while (true);
 	return headNode;
@@ -88,6 +89,29 @@ static TarNode *newParsedTar()
 	return newParsedTar;
 }
 
+static void freeParsedTar(TarNode *parsedTar) 
+{
+	TarNode *tmp;
+	while (parsedTar) {
+		free(parsedTar->header);
+		tmp = parsedTar;
+		parsedTar = parsedTar->next;
+		free(tmp);
+	}
+}
+
+/* Function: Checks if file pointed to by archivefd is empty
+ * ---------------------------------------------------------
+ */
+static int archiveIsEmpty(int archivefd)
+{
+	int returnValue = 0;
+	if (lseek(archivefd, 0, SEEK_END) == 0)
+		returnValue = 1;
+	lseek(archivefd, 0, SEEK_SET);
+	return returnValue;
+}
+
 /* Function: Checks if next BLOCKSIZE * 2 bytes are null
  * -----------------------------------------------------
  * .tar archives terminate their archives with 2 blocks of null bytes.
@@ -99,7 +123,7 @@ static int checkEndOfArchive(int archivefd)
 	char nextTwoBlocks[BLOCKSIZE * 2 + 1] = { '\0' };
 	int bytesRead = read(archivefd, nextTwoBlocks, BLOCKSIZE * 2);
 	if (bytesRead < BLOCKSIZE * 2) {
-		dprintf(STDERR_FILENO, "Error: Cannot read 2x BLOCKSIZE bytes\n");
+		dprintf(STDERR_FILENO, "Error: Cannot check end of archive\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
@@ -135,6 +159,10 @@ static int addNode(TarNode **headNode, TarNode **lastNode)
 	return 0;
 }
 
+/* Function: Takes a TarNode and returns number of bytes of contents
+ * -----------------------------------------------------------------
+ * The size of contents is rounded up to the nearest multiple of BLOCKSIZE
+ */
 static int getContentsSize(TarNode *tarNode)
 {
 	long size = _strtol(tarNode->header->size, NULL, 8);
@@ -144,19 +172,6 @@ static int getContentsSize(TarNode *tarNode)
 	int contentSize = contentBlocks * BLOCKSIZE;
 	return contentSize;
 }
-
-/* Function: Converts PosixHeader to our custom HeaderData
- * -------------------------------------------------------
- * PosixHeader is the information as stored in the .tar archive, but it is
- * not practical for using across the program since all data is in ASCII.
- * The HeaderData structure uses appropriate data types for ease of manipulation.
-static int convertHeader(PosixHeader* posixHeader)
-{
-	HeaderData *headerData = malloc(sizeof(HeaderData));
-	_strcpy(headerData->name, posixHeader->name);
-	headerData->permissions = _strtol(posixHeader->mode, NULL, 8)
-}
- */
 
 /* Function: Parses header in .tar file and puts it in PosixHeader struct
  * ----------------------------------------------------------------------
@@ -172,12 +187,25 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 		return -1;
 	}
 	if (_strtol(header->chksum, NULL, 8) != computeChecksum(header)) {
-		dprintf(STDERR_FILENO, "Error: CheckSum does not match \n");
+		dprintf(STDERR_FILENO, 
+		        "Error: chksum does not match, may be invalid archive.\n");
 		return -1;
 	}
 	return bytesRead;
 } 
 
+/* Function: Moves pointer of fildes forward by BLOCKSIZE to skip header
+ * ---------------------------------------------------------------------
+ */
+static int skipHeader(int archivefd)
+{
+	lseek(archivefd, BLOCKSIZE, SEEK_CUR);
+	return BLOCKSIZE;
+}
+
+/* Function: Moves pointer of fildes forward to skip contents of file
+ * ------------------------------------------------------------------
+ */
 static int skipContents(int archivefd, TarNode *tarNode)
 {
 	int contentSize = getContentsSize(tarNode);
@@ -185,67 +213,151 @@ static int skipContents(int archivefd, TarNode *tarNode)
 	return contentSize;
 }
 
-static int searchFile(TarNode *tarNode, PathNode *filePaths)
+/* Function: Used to compare whether two pathnames are equivalent
+ * --------------------------------------------------------------
+ * Needs to account for pathNames that may or may not end in '/' 
+ * but are otherwise still equivalent
+ */
+static int _pwdcmp(char *pathName1, char *pathName2)
 {
-	char *pathName = filePaths->path;
-	int nameLength = _strlen(pathName);
-	while (filePaths) {
-		if (!_strncmp(tarNode->header->name, pathName, nameLength))
-			return 1;
-		filePaths = filePaths->next;
+	int len1 = _strlen(pathName1);
+	int len2 = _strlen(pathName2);
+	int result;
+	if ((result = _strcmp(pathName1, pathName2)) == 0)
+		return 0;
+	if (*(pathName1 + len1-1) == '/' && *(pathName2 + len1-1) == '\0') {
+		if (_strncmp(pathName1, pathName2, len1-1) == 0)
+			return 0;
 	}
+	if (*(pathName1 + len2-1) == '\0' && *(pathName2 + len2-1) == '/') {
+		if (_strncmp(pathName1, pathName2, len2-1) == 0)
+			return 0;
+	}
+	return result;
+}
+
+/* Function: Returns 1 if file in tarNode ought to be extracted based on filePath
+ * ------------------------------------------------------------------------------
+ * NTD: This function is messy because it has to match a bunch of edge cases
+ * and I'm not sure if there's a cleaner way of doing it.
+ */
+static int shouldExtract(TarNode *tarNode, PathNode *filePaths)
+{
+	char *argName = filePaths->path;
+	char *tarName = tarNode->header->name;
+	char buffer[MAXPATH] = { '\0' };
+	int i;
+	// We have this loop here so that parent dirs in pathname
+	// of filePath will be found and created
+	for (i = 0; i < (int) _strlen(argName) + 1; i++) {
+		buffer[i] = *(argName + i);
+		if (*(argName + i) == '/') {
+			if (!_strncmp(tarName, buffer, _strlen(argName))) {
+				return 1;
+			}
+		}
+		// We have this here so that if dir in filePath arg 
+		// does not contains '/', it will still match 
+		if (*(tarName + i) == '/' && *(argName + i) == '\0') {
+			if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+				return 1;
+		}
+		// We have this block if filePath ends in '/' and
+		// is referencing a file that doesn't end in '/'
+		if (*(argName + i - 1) == '/' && *(tarName + i - 1) == '\0') {
+			if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+				return 1;
+		}
+	}
+	// We have this block if filePath doesn't end in '/'
+	// and is referencing a file that doesn't end in '/'
+	if (!_strcmp(tarName, argName)) 
+		return 1;
 	return 0;
 }
 
-/*
-static int offsetFildesPtr(int archivefd, TarNode *tarNode) 
-{
-}
-*/
-
-/* Function: Extract all files in tar archive
- * ------------------------------------------
+/* Function: Searches for argName in tar archive (via header->name's of TarNode)
+ * -----------------------------------------------------------------------------
  */
-static int extractFiles(Params *params, TarNode *tarNode)
+static int findInTar(TarNode *tarNode, char *argName)
 {
-	int archivefd = open(params->archivePath, O_RDONLY);
-	int extractAll = params->filePaths == NULL;
 	while (tarNode) {
-		if (extractAll || searchFile(tarNode, params->filePaths)) 
-			createFile(archivefd, tarNode);
-		/*
-		else 
-			// offsetFildesPtr(archive, tarNode);
-		*/
+		if (_pwdcmp(tarNode->header->name, argName) == 0)
+			return 1;
 		tarNode = tarNode->next;
 	}
 	return 0;
 }
 
+/* Function: Extract files from tar archive
+ * -----------------------------------------
+ * This function controls the flow of extraction depending on whether all 
+ * files ought to be extracted or whether only those files specified as 
+ * arguments in the command line should be extracted. The latter requires
+ * more plumbing.
+ */
+static int extractFiles(Params *params, TarNode *tarNode)
+{
+	int archivefd = open(params->archivePath, O_RDONLY);
+	PathNode *argPaths = params->filePaths;
+	int extractAll = (argPaths == NULL);
+	if (extractAll) {
+		while (tarNode) {
+			createFile(archivefd, tarNode);
+			tarNode = tarNode->next;
+		}
+		return 0;
+	}
+	while (argPaths) {
+		if (!findInTar(tarNode, argPaths->path)) {
+			dprintf(STDERR_FILENO, "%s: Not found in archive\n", 
+			        argPaths->path);
+		} else {
+			TarNode *tarNodeLoop = tarNode;
+			while(tarNodeLoop) {
+				if (shouldExtract(tarNodeLoop, argPaths)) {
+					createFile(archivefd, tarNodeLoop);
+				} else {
+					skipHeader(archivefd);
+					skipContents(archivefd, tarNodeLoop);
+				}
+				tarNodeLoop = tarNodeLoop->next;
+			}
+		}
+		argPaths = argPaths->next;
+	}
+	return 0;
+}
+
+/* Function: "Wrapper" function for managing which createX() function is used
+ * --------------------------------------------------------------------------
+ */
 static void createFile(int archivefd, TarNode *tarNode)
 {
 	char mode = tarNode->header->typeflag;
 	switch (mode) {
 	case REGTYPE:
 	case AREGTYPE:
-		printf("we reg file brahs\n");
 		createREGTYPE(archivefd, tarNode);
 		break;
 	case LNKTYPE:
-		printf("we link file brahs\n");
 		createLNKTYPE(archivefd, tarNode);
 		break;
 	case SYMTYPE:
-		printf("we symlink file brahs\n");
 		createSYMTYPE(archivefd, tarNode);
 		break;
 	case DIRTYPE:
-		printf("we dir file brahs\n");
 		createDIRTYPE(archivefd, tarNode);
 		break;
 	}
 }
 
+/* Function: Counts contiguous null chars starting at end of string and going back
+ * -------------------------------------------------------------------------------
+ * Because tar archive rounds up contents to nearests BLOCKSIZE, it fills
+ * the remaining bytes with null chars. When we write to file, we don't 
+ * want to include these chars. We count them here to remove them later.
+ */
 static int countTrailingNulls(char *buffer, int contentsSize)
 {
 	int countNulls = 0;
@@ -282,6 +394,8 @@ static int createLNKTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (link(srcPath, lnkPath) != 0) {
+		dprintf(STDERR_FILENO, "%s: Cannot hard link to '%s'\n", 
+		        lnkPath, srcPath);
 		return -1;
 	}
 	setFileInfo(tarNode->header->name, tarNode);
@@ -294,6 +408,8 @@ static int createSYMTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (symlink(srcPath, lnkPath) != 0) {
+		dprintf(STDERR_FILENO, "%s: Cannot soft link to '%s'\n", 
+		        lnkPath, srcPath);
 		return -1;
 	}
 	setFileInfo(tarNode->header->name, tarNode);

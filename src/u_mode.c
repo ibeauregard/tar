@@ -7,9 +7,11 @@ static void destructExistingHeaders(TarNode *existingHeaders);
 
 int u_mode(Params *params)
 {
-	// TODO: Should not cause an error when archivePath points to an empty archive file
-	TarNode *existingHeaders = parseTar(params->archivePath);
-	int status = create(params, true, existingHeaders);
+	int status;
+	TarNode *existingHeaders = parseTar(params->archivePath, &status);
+	if (!status) {
+		status = create(params, true, existingHeaders);
+	}
 	destructExistingHeaders(existingHeaders);
 	return status;
 }
