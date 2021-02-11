@@ -1,10 +1,11 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -Werror
-SANITIZE = -g3 -fsanitize=address
+CFLAGS = -Wall -Wextra -Wpedantic -Werror -g3
+SANITIZE = -fsanitize=address
 LINKERFLAG = -lm
-SRCS = $(wildcard *.c)
+SRCS = $(wildcard src/*.c) $(wildcard src/*/*.c)
 OBJS = $(SRCS:.c=.o)
 MAIN = my_tar
+
 .PHONY = all clean fclean re
 
 all: $(MAIN)
