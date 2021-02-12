@@ -197,10 +197,11 @@ testXMode() {
 	printf "PASSED TEST 5: Extract tar contents\n"
 }
 
+
 testCMode "$@"
 testRMode "$@"
 testUMode "$@"
 # testTMode "$@"
-# testXMode "$@"
+testXMode "$@"
 cleanUp "$@"
 exit 0 

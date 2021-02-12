@@ -361,7 +361,7 @@ static void createFile(int archivefd, TarNode *tarNode)
 static int countTrailingNulls(char *buffer, int contentsSize)
 {
 	int countNulls = 0;
-	for (int i = contentsSize; buffer[i] == '\0' && i != 0; i--) {
+	for (int i = contentsSize-1; buffer[i] == '\0' && i != 0; i--) {
 		countNulls++;
 	}
 	return countNulls;
