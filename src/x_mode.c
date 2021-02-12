@@ -144,8 +144,8 @@ static int applyTarNode(Params *params, TarNode *tarNode,
 		} else {
 			TarNode *tarNodeLoop = tarNode;
 			while(tarNodeLoop) {
-				if (shouldApply(tarNodeLoop, argPaths)) {
-					(*apply)(archivefd, tarNode);
+				if ((shouldApply(tarNodeLoop, argPaths))) {
+					(*apply)(archivefd, tarNodeLoop);
 				} else {
 					skipHeader(archivefd);
 					skipContents(archivefd, tarNodeLoop);
