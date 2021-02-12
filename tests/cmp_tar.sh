@@ -19,6 +19,20 @@ cleanUp() {
 	rm -r extract_my_tar >> /dev/null 2>&1
 }
 
+# TEST 0: Compiling my_tar
+testMake() {
+	cd ..
+	make re --silent
+	status=$?
+	if [ $status -gt 0 ]; then
+		printf "FAILED TEST 0: Compiling my_tar\n"
+		echo $res
+		exit 1
+	fi
+	printf "PASSED TEST 0: Compiling my_tar\n"
+	cd - >> /dev/null 2>&1
+}
+
 # TEST 1: Creating tar archive
 testCMode() {
 	for arg in "$@"
@@ -197,6 +211,7 @@ testXMode() {
 	printf "PASSED TEST 5: Extract tar contents\n"
 }
 
+testMake
 testCMode "$@"
 testRMode "$@"
 testUMode "$@"
