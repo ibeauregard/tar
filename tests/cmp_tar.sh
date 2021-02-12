@@ -211,11 +211,50 @@ testXMode() {
 	printf "PASSED TEST 5: Extract tar contents\n"
 }
 
+cmpStdErr() {
+	for comm in "$@"
+	do
+	# cut: errors start with either "tar: " or "my_tar: " that we exclude
+		echo ${comm}: >> errors.txt
+		echo ${comm}: >> my_errors.txt
+		$comm 2>&1 >/dev/null | cut -d' ' -f2- >> errors.txt
+		# sed: tar errors includes a second line "try --help" that we exclude 
+		helpMessage=$(tail -n -1 errors.txt | cut -d' ' -f1-2)
+		if [[ $helpMessage == "'tar --help'" ]]; then
+			sed -i '$d' errors.txt
+		fi
+		../my_$comm 2>&1 >/dev/null | cut -d' ' -f2- >> my_errors.txt
+	done
+}
+
+# TEST 6: Error messages
+testErrors() {
+	rm errors >> /dev/null 2>&1
+	rm my_errors >> /dev/null 2>&1
+	touch errors.txt
+	touch my_errors.txt
+	cmpStdErr "tar -f" "tar -c foo.txt -f" "tar -c -f" "tar -cf"
+	cmpStdErr "tar" "tar foo.txt" "tar -y" "tar -yc" "tar -cy"
+	cmpStdErr "tar -ct" "tar -c" "tar -cf foo.tar foo.inexistent"
+	cmpStdErr "tar -rf foo.tar foo.inexistent" "tar -uf foo.tar foo.inexistent"
+	cmpStdErr "tar -cf foo.tar foo.tar" "tar -rf foo.tar foo.tar"
+	cmpStdErr "tar -uf foo.tar foo.tar"
+	cmpStdErr "tar -r" "tar -r foo.txt" "tar -u" "tar -u foo.txt"
+	diff -1 errors.txt my_errors.txt
+	status=$?
+	if [ $status -gt 0 ]; then
+		printf "FAILED TEST 6: Error Messages\n"
+		exit 1
+	fi
+	printf "PASSED TEST 6: Error Messages\n"
+}
+
 testMake
 testCMode "$@"
 testRMode "$@"
 testUMode "$@"
 # testTMode "$@"
 # testXMode "$@"
+testErrors
 cleanUp "$@"
 exit 0 
