@@ -23,8 +23,9 @@ static int parseHeader(int archivefd, TarNode *lastNode);
 static int skipContents(int archivefd, TarNode *lastNode);
 
 // Functions for creating files
-static int extractFiles(Params *params, TarNode *parsedTar);
-static int shouldExtract(TarNode *tarNode, PathNode *PathNode);
+static int applyTarNode(Params *params, TarNode *parsedTar,
+                        void (*apply)(int archivefd, TarNode *tarNode));
+static int shouldApply(TarNode *tarNode, PathNode *PathNode);
 static void createFile(int archivefd, TarNode *parsedTar);
 static int createREGTYPE(int archivefd, TarNode *tarNode);
 static int createLNKTYPE(int archivefd, TarNode *tarNode);
@@ -39,7 +40,7 @@ int x_mode(Params *params)
 {
 	int status = 0;
 	TarNode *parsedTar = parseTar(params->archivePath, &status);
-	extractFiles(params, parsedTar);
+	applyTarNode(params, parsedTar, createFile);
 	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
 }
@@ -241,7 +242,7 @@ static int _pwdcmp(char *pathName1, char *pathName2)
  * NTD: This function is messy because it has to match a bunch of edge cases
  * and I'm not sure if there's a cleaner way of doing it.
  */
-static int shouldExtract(TarNode *tarNode, PathNode *filePaths)
+static int shouldApply(TarNode *tarNode, PathNode *filePaths)
 {
 	char *argName = filePaths->path;
 	char *tarName = tarNode->header->name;
@@ -291,19 +292,25 @@ static int findInTar(TarNode *tarNode, char *argName)
 
 /* Function: Extract files from tar archive
  * -----------------------------------------
- * This function controls the flow of extraction depending on whether all 
- * files ought to be extracted or whether only those files specified as 
- * arguments in the command line should be extracted. The latter requires
- * more plumbing.
+ * Originally this function was used for extraction (looping through TarNode
+ * and applying createFile functon). But because logic needs to be reused for
+ * t-mode, decided to generalize the function and allow one to pass in a pointer
+ * to a function. Thus, for x-mode the createFile function would be used and
+ * for t-mode another function will be used. 
+ *
+ * This function selectively applies the (*apply) function depending on whether 
+ * all tarNodes ought to be applied to fxn or whether only those files specified 
+ * as arguments in the command line (i.e. Params *params) should be extracted.
  */
-static int extractFiles(Params *params, TarNode *tarNode)
+static int applyTarNode(Params *params, TarNode *tarNode, 
+                        void (*apply)(int archivefd, TarNode *tarNode))
 {
 	int archivefd = open(params->archivePath, O_RDONLY);
 	PathNode *argPaths = params->filePaths;
 	int extractAll = (argPaths == NULL);
 	if (extractAll) {
 		while (tarNode) {
-			createFile(archivefd, tarNode);
+			(*apply)(archivefd, tarNode);
 			tarNode = tarNode->next;
 		}
 		return 0;
@@ -315,8 +322,8 @@ static int extractFiles(Params *params, TarNode *tarNode)
 		} else {
 			TarNode *tarNodeLoop = tarNode;
 			while(tarNodeLoop) {
-				if (shouldExtract(tarNodeLoop, argPaths)) {
-					createFile(archivefd, tarNodeLoop);
+				if (shouldApply(tarNodeLoop, argPaths)) {
+					(*apply)(archivefd, tarNode);
 				} else {
 					skipHeader(archivefd);
 					skipContents(archivefd, tarNodeLoop);

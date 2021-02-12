@@ -254,7 +254,7 @@ testCMode "$@"
 testRMode "$@"
 testUMode "$@"
 # testTMode "$@"
-# testXMode "$@"
-testErrors
+testXMode "$@"
+# testErrors
 cleanUp "$@"
 exit 0 
