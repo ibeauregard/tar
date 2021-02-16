@@ -150,6 +150,9 @@ testUMode() {
 testTMode() {
 	for arg in "$@"
 	do
+		tar -f $arg.tar -c $arg
+		../my_tar -f my_$arg.tar -c $arg
+
 		tar -tf $arg.tar > $arg.txt
 		../my_tar -tf $arg.tar > my_$arg.txt
 		res=$(cmp -b $arg.txt my_$arg.txt) 
@@ -161,6 +164,7 @@ testTMode() {
 		fi
 	done
 	printf "PASSED TEST 4: Listing tar contents\n"
+	cleanUp "$@"
 }
 
 # TEST 5: Extract tar contents
@@ -253,8 +257,8 @@ testMake
 testCMode "$@"
 testRMode "$@"
 testUMode "$@"
-# testTMode "$@"
-# testXMode "$@"
-testErrors
+testTMode "$@"
+testXMode "$@"
+# testErrors
 cleanUp "$@"
 exit 0 
