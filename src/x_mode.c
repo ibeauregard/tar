@@ -1,9 +1,9 @@
-#include <stdio.h>            // For dprintf
 #include <stdlib.h>           // For malloc, lseek
 #include <fcntl.h>            // For open
 #include <unistd.h>           // For read, STDERR_FILENO
 
 #include "utils/_stdlib.h"    // For _strtol
+#include "utils/_stdio.h"
 #include "tar_parsing.h"
 
 // Functions for creating files
@@ -91,7 +91,7 @@ static int createLNKTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (link(srcPath, lnkPath) != 0) {
-		dprintf(STDERR_FILENO, "%s: Cannot hard link to '%s'\n", 
+		_dprintf(STDERR_FILENO, "%s: Cannot hard link to '%s'\n",
 		        lnkPath, srcPath);
 		return -1;
 	}
@@ -105,7 +105,7 @@ static int createSYMTYPE(int archivefd, TarNode *tarNode)
 	char *srcPath = tarNode->header->linkname;
 	char *lnkPath = tarNode->header->name;
 	if (symlink(srcPath, lnkPath) != 0) {
-		dprintf(STDERR_FILENO, "%s: Cannot soft link to '%s'\n", 
+		_dprintf(STDERR_FILENO, "%s: Cannot soft link to '%s'\n",
 		        lnkPath, srcPath);
 		return -1;
 	}

@@ -1,6 +1,5 @@
 #include <stdarg.h>
 #include <unistd.h>
-#include <stdio.h>
 
 #define CONVERSION_TRIGGER '%'
 #define MINUS_SIGN '-'
@@ -11,6 +10,7 @@
 #define HEXA_PREFIX "0x"
 #define NULL_STRING_PLACEHOLDER "(null)"
 #define FLUSH_TRIGGER '\n'
+#define BUFSIZ 1024
 
 typedef struct s_output_buffer
 {

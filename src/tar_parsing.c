@@ -1,9 +1,9 @@
-#include <stdio.h>            // For drpintf
 #include <stdlib.h>           // For malloc
 #include <fcntl.h>            // For open
 #include <unistd.h>           // For lseek, STDERR_FILENO
 
 #include "utils/_stdlib.h"
+#include "utils/_stdio.h"
 #include "utils/_string.h"    // For _strlen
 #include "tar_parsing.h"
 
@@ -53,7 +53,7 @@ static int checkEndOfArchive(int archivefd)
 	char nextTwoBlocks[BLOCKSIZE * 2 + 1] = { '\0' };
 	int bytesRead = read(archivefd, nextTwoBlocks, BLOCKSIZE * 2);
 	if (bytesRead < BLOCKSIZE * 2) {
-		dprintf(STDERR_FILENO, "Error: Cannot check end of archive\n");
+		_dprintf(STDERR_FILENO, "Error: Cannot check end of archive\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
@@ -75,12 +75,12 @@ static int parseHeader(int archivefd, TarNode *lastNode)
 	lastNode->header = header;
 	int bytesRead = read(archivefd, header, BLOCKSIZE);
 	if (bytesRead < BLOCKSIZE) {
-		dprintf(STDERR_FILENO, "Error: Cannot read BLOCKSIZE bytes\n");
+		_dprintf(STDERR_FILENO, "Error: Cannot read BLOCKSIZE bytes\n");
 		lseek(archivefd, -bytesRead, SEEK_CUR);
 		return -1;
 	}
 	if (_strtol(header->chksum, NULL, 8) != computeChecksum(header)) {
-		dprintf(STDERR_FILENO, 
+		_dprintf(STDERR_FILENO, 
 		        "Error: chksum does not match, may be invalid archive.\n");
 		return -1;
 	}
@@ -98,7 +98,7 @@ static int addNode(TarNode **headNode, TarNode **lastNode)
 {
 	TarNode *nextNode = newParsedTar();
 	if (!nextNode) {
-		dprintf(STDERR_FILENO, "Error: Could not allocate memory\n");
+		_dprintf(STDERR_FILENO, "Error: Could not allocate memory\n");
 		return -1;
 	}
 	if (*headNode == NULL) {
@@ -310,7 +310,7 @@ int applyTarNode(Params *params, TarNode *tarNode, int applyPar,
 	}
 	while (argPaths) {
 		if (!findInTar(tarNode, argPaths->path)) {
-			dprintf(STDERR_FILENO, "%s: Not found in archive\n", 
+			_dprintf(STDERR_FILENO, "%s: Not found in archive\n", 
 			        argPaths->path);
 		} else {
 			TarNode *tarNodeLoop = tarNode;

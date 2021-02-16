@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <stdlib.h>           // For EXIT_SUCCESS
 
 #include "modes.h"
 #include "tar_parsing.h"
+#include "utils/_stdio.h"
 
 // Functions for listing files
 static void listContents(int archivefd, TarNode *parsedTar);
@@ -19,5 +19,5 @@ int t_mode(Params *params)
 
 static void listContents(int archivefd, TarNode *tarNode) {
 	(void) archivefd;
-	printf("%s\n", tarNode->header->name);
+	_printf("%s\n", tarNode->header->name);
 }
