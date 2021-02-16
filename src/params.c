@@ -25,7 +25,7 @@ static int argRequiredError(char option);
 
 Params getNewParams()
 {
-	Params params = {
+	static Params params = {
 		.archivePath = STDOUT_PATH,
 		.mode = UNDEFINED,
 		.filePaths = NULL
