@@ -14,7 +14,7 @@
 #include "tar_parsing.h"      // For tarNode
 
 TarNode *parseTar(char *archivePath, int *status);
-int applyTarNode(Params *params, TarNode *tarNode, 
+int applyTarNode(Params *params, TarNode *tarNode, int applyParents,
                         void (*apply)(int archivefd, TarNode *tarNode));
 int getContentsSize(TarNode *tarNode);
 void freeParsedTar(TarNode *parsedTar);

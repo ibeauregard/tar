@@ -20,8 +20,9 @@ static int createDIRTYPE(int archivefd, TarNode *tarNode);
 int x_mode(Params *params)
 {
 	int status = 0;
+	int applyParents = 1;
 	TarNode *parsedTar = parseTar(params->archivePath, &status);
-	applyTarNode(params, parsedTar, createFile);
+	applyTarNode(params, parsedTar, applyParents, createFile);
 	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
 }

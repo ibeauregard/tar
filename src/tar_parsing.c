@@ -214,43 +214,70 @@ static int findInTar(TarNode *tarNode, char *argName)
 	return 0;
 }
 
+/* Function: Returns copy of str but with all trailing dchar removed
+ * -----------------------------------------------------------------
+ */
+static char *removeTrailingChar(char *str, char dchar) 
+{
+	int strLength = _strlen(str);
+	char *strClean = malloc(strLength + 1);
+	_strcpy(strClean, str);
+	*(strClean + strLength--) = '\0';
+	while (strLength >= 0 && strClean[strLength] == dchar) {
+		strClean[strLength] = '\0';
+	}
+	return strClean;
+}
+
 /* Function: Returns 1 if file in tarNode ought to be extracted based on filePath
  * ------------------------------------------------------------------------------
  * NTD: This function is messy because it has to match a bunch of edge cases
  * and I'm not sure if there's a cleaner way of doing it.
  */
-static int shouldApply(TarNode *tarNode, PathNode *filePaths)
+static int shouldApply(TarNode *tarNode, PathNode *filePaths, int applyParents)
 {
-	char *argName = filePaths->path;
+	char *argName = removeTrailingChar(filePaths->path, '/');
 	char *tarName = tarNode->header->name;
+
 	char buffer[MAXPATH] = { '\0' };
 	int i;
 	// We have this loop here so that parent dirs in pathname
 	// of filePath will be found and created
 	for (i = 0; i < (int) _strlen(argName) + 1; i++) {
 		buffer[i] = *(argName + i);
-		if (*(argName + i) == '/') {
+		// We have this block for when 1) we want parent dir and
+		// 2) if we want all nested / sub-files or directories
+		if ((applyParents && *(tarName + i) != '\0')
+		                  && *(argName + i) == '/') {
 			if (!_strncmp(tarName, buffer, _strlen(argName))) {
+				free(argName);
 				return 1;
 			}
 		}
 		// We have this here so that if dir in filePath arg 
 		// does not contains '/', it will still match 
-		if (*(tarName + i) == '/' && *(argName + i) == '\0') {
-			if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+		if (*(tarName + i) == '/' && *(argName + i) == '\0') { 
+			if (!_strncmp(tarName, argName, _strlen(argName)-1)) {
+				free(argName);
 				return 1;
+			}
 		}
 		// We have this block if filePath ends in '/' and
 		// is referencing a file that doesn't end in '/'
-		if (*(argName + i - 1) == '/' && *(tarName + i - 1) == '\0') {
-			if (!_strncmp(tarName, argName, _strlen(argName)-1)) 
+		if (*(argName + i-1) == '/' && *(tarName + i-1) == '\0') {
+			if (!_strncmp(tarName, argName, _strlen(argName)-1)) {
+				free(argName);
 				return 1;
+			}
 		}
 	}
 	// We have this block if filePath doesn't end in '/'
 	// and is referencing a file that doesn't end in '/'
-	if (!_strcmp(tarName, argName)) 
+	if (!_strcmp(tarName, argName)) {
+		free(argName);
 		return 1;
+	}
+	free(argName);
 	return 0;
 }
 
@@ -265,8 +292,10 @@ static int shouldApply(TarNode *tarNode, PathNode *filePaths)
  * This function selectively applies the (*apply) function depending on whether 
  * all tarNodes ought to be applied to fxn or whether only those files specified 
  * as arguments in the command line (i.e. Params *params) should be extracted.
+ * @applyPar: Indicates whether (*apply) function should also apply to parent
+ *            directories of the pathname
  */
-int applyTarNode(Params *params, TarNode *tarNode, 
+int applyTarNode(Params *params, TarNode *tarNode, int applyPar,
                         void (*apply)(int archivefd, TarNode *tarNode))
 {
 	int archivefd = open(params->archivePath, O_RDONLY);
@@ -286,7 +315,7 @@ int applyTarNode(Params *params, TarNode *tarNode,
 		} else {
 			TarNode *tarNodeLoop = tarNode;
 			while(tarNodeLoop) {
-				if ((shouldApply(tarNodeLoop, argPaths))) {
+				if ((shouldApply(tarNodeLoop, argPaths, applyPar))) {
 					(*apply)(archivefd, tarNodeLoop);
 				} else {
 					skipHeader(archivefd);
@@ -295,7 +324,9 @@ int applyTarNode(Params *params, TarNode *tarNode,
 				tarNodeLoop = tarNodeLoop->next;
 			}
 		}
+		PathNode *tmp = argPaths;
 		argPaths = argPaths->next;
+		free(tmp);
 	}
 	return 0;
 }

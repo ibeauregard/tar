@@ -11,8 +11,9 @@ static void listContents(int archivefd, TarNode *parsedTar);
 int t_mode(Params *params)
 {
 	int status = 0;
+	int applyParents = 0;
 	TarNode *parsedTar = parseTar(params->archivePath, &status);
-	applyTarNode(params, parsedTar, listContents);
+	applyTarNode(params, parsedTar, applyParents, listContents);
 	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
 }
