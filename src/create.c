@@ -24,9 +24,7 @@ int create(Params *params, bool append, TarNode *existingHeaders)
 		PathNode *current = params->filePaths;
 		if (!_strcmp(params->archivePath, current->path)) {
 			error(FILE_IS_ARCHIVE_ERR, current->path);
-			return finalizeTarList(&list);
-		}
-		if (handlePath(current->path, &list, existingHeaders)) {
+		} else if (handlePath(current->path, &list, existingHeaders)) {
 			return finalizeTarList(&list);
 		}
 		params->filePaths = current->next;

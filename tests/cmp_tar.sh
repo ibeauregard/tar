@@ -229,8 +229,8 @@ cmpStdErr() {
 
 # TEST 6: Error messages
 testErrors() {
-	rm errors >> /dev/null 2>&1
-	rm my_errors >> /dev/null 2>&1
+	rm errors.txt >> /dev/null 2>&1
+	rm my_errors.txt >> /dev/null 2>&1
 	touch errors.txt
 	touch my_errors.txt
 	cmpStdErr "tar -f" "tar -c foo.txt -f" "tar -c -f" "tar -cf"
