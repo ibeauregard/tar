@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>           // For EXIT_SUCCESS
-#include <unistd.h>           // For STDOUT_FILENO
 
 #include "modes.h"
 #include "tar_parsing.h"
