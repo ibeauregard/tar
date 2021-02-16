@@ -18,5 +18,4 @@ int applyTarNode(Params *params, TarNode *tarNode,
                         void (*apply)(int archivefd, TarNode *tarNode));
 int getContentsSize(TarNode *tarNode);
 void freeParsedTar(TarNode *parsedTar);
-
 #endif

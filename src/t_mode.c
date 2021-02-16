@@ -1,14 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>           // For EXIT_SUCCESS
+#include <unistd.h>           // For STDOUT_FILENO
+
 #include "modes.h"
-#include <stdlib.h>
+#include "tar_parsing.h"
+
+// Functions for listing files
+static void listContents(int archivefd, TarNode *parsedTar);
 
 int t_mode(Params *params)
 {
-	// THIS IS JUST TO PREVENT ANY MEMORY LEAK PENDING IMPLEMENTATION
-	PathNode *pathNode = params->filePaths;
-	while (pathNode) {
-		PathNode *current = pathNode;
-		pathNode = pathNode->next;
-		free(current);
-	}
+	int status = 0;
+	TarNode *parsedTar = parseTar(params->archivePath, &status);
+	applyTarNode(params, parsedTar, listContents);
+	freeParsedTar(parsedTar);
 	return EXIT_SUCCESS;
+}
+
+static void listContents(int archivefd, TarNode *tarNode) {
+	(void) archivefd;
+	printf("%s\n", tarNode->header->name);
 }
