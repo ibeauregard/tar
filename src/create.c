@@ -15,7 +15,7 @@ static int listEntry(HeaderData *headerData, TarList *list, TarNode *existingHea
 static HeaderData *previousLink(Stat *fileStat, TarList *list);
 static void listHeader(HeaderData *headerData, TarList *list);
 static int listDirEntries(const HeaderData *dirHeaderData, TarList *list, TarNode *existingHeaders);
-static char* buildPath(char* fullPath, const char* dirPath, const char* name);
+static char *buildPath(char *fullPath, const char *dirPath, const char *name);
 
 int create(Params *params, bool append, TarNode *existingHeaders)
 {
@@ -112,7 +112,7 @@ int listDirEntries(const HeaderData *dirHeaderData, TarList *list, TarNode *exis
 	return EXIT_SUCCESS;
 }
 
-inline char* buildPath(char* fullPath, const char* dirPath, const char* name)
+inline char *buildPath(char *fullPath, const char *dirPath, const char *name)
 {
 	return _strcat(_strcpy(fullPath, dirPath), name);
 }

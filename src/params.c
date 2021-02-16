@@ -16,7 +16,7 @@ typedef struct s_params_wrapper
 
 static ParamsWrapper getNewParamsWrapper(Params *params);
 static int handleArgument(char *argument, ParamsWrapper *wrapper);
-static int handleOptions(char* options, ParamsWrapper *wrapper);
+static int handleOptions(char *options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
 static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
 static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
@@ -68,7 +68,7 @@ int handleArgument(char *argument, ParamsWrapper *wrapper)
 	return EXIT_SUCCESS;
 }
 
-int handleOptions(char* options, ParamsWrapper *wrapper)
+int handleOptions(char *options, ParamsWrapper *wrapper)
 {
 	switch (options[0]) {
 		case 0:
