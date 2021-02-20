@@ -65,27 +65,3 @@ char* _strcat(char* dest, const char* source)
 	dest[i + j] = 0;
 	return dest;
 }
-
-// char *_strtok(char *str, const char *delim)
-// {
-// 	static char *lastStr;
-// 	if (str != NULL)
-// 		lastStr = str;
-// 
-// 	int letterCount = 0;
-// 	char *loopStr = lastStr;
-// 	while (*loopStr++ != *delim) {
-// 		letterCount++;
-// 	}
-// 	char *token = malloc(sizeof(char) * letterCount);
-// 
-// 	while (*lastStr != *delim) {
-// 		*token++ = *lastStr++;
-// 	}
-// 
-// 	while (*lastStr == delim) {
-// 		lastStr++;
-// 	}	
-// 
-// 	return token;
-// }
