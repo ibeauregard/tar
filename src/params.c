@@ -20,7 +20,7 @@ static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
 static int setMode(Mode mode, ParamsWrapper *wrapper, char *options);
 static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
-static int argRequiredError(char option);
+static int fArgRequiredError(void);
 
 Params getNewParams()
 {
@@ -87,7 +87,7 @@ int handleOptionF(char nextOption, ParamsWrapper *wrapper)
 {
 	wrapper->fArgExpected = true;
 	if (nextOption) {
-		return argRequiredError('f');
+		return fArgRequiredError();
 	}
 	return EXIT_SUCCESS;
 }
@@ -113,7 +113,7 @@ void updateLinks(ParamsWrapper *wrapper, PathNode *node)
 int validate(const ParamsWrapper *wrapper)
 {
 	if (wrapper->fArgExpected) {
-		return argRequiredError('f');
+		return fArgRequiredError();
 	}
 	Params *params = wrapper->params;
 	if (!params->mode) {
@@ -128,9 +128,9 @@ int validate(const ParamsWrapper *wrapper)
 	return EXIT_SUCCESS;
 }
 
-int argRequiredError(char option)
+int fArgRequiredError(void)
 {
-	return errorCharArg(ARG_REQUIRED_ERR, option);
+	return errorCharArg(ARG_REQUIRED_ERR, 'f');
 }
 
 int cleanupAfterFailure(Params *params)
