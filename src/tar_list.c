@@ -9,7 +9,7 @@ static int dumpHeader(const HeaderData *headerData, const Archive *archive);
 static int dumpContent(const HeaderData *headerData, const Archive *archive);
 static void zfillLastBlock(char *buffer, size_t numBlocks);
 
-TarList getNewTarList()
+TarList getNewTarList(void)
 {
 	static TarList list;
 	return list;

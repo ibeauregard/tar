@@ -9,7 +9,7 @@
 
 #define MAXPATH 255
 
-static TarNode *newParsedTar()
+static TarNode *newParsedTar(void)
 {
 	TarNode *newParsedTar = malloc(sizeof(TarNode));
 	if (!newParsedTar)

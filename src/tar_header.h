@@ -47,7 +47,7 @@ typedef struct posix_header
 	                                           /* 512 */
 } PosixHeader;
 
-PosixHeader getZeroFilledPosixHeader();
+PosixHeader getZeroFilledPosixHeader(void);
 PosixHeader *getHeaderFromData(const HeaderData *headerData, PosixHeader *header);
 unsigned int computeChecksum(PosixHeader *header);
 char *getNameFromHeader(PosixHeader *header, char *dest);

@@ -29,7 +29,7 @@ static void setChecksum(PosixHeader *header);
 static unsigned int getByteSum(const char *field, unsigned char size);
 static void copyOctal(char *dest, unsigned int num, unsigned char size);
 
-PosixHeader getZeroFilledPosixHeader()
+PosixHeader getZeroFilledPosixHeader(void)
 {
 	static PosixHeader header;
 	return header;

@@ -22,7 +22,7 @@ static void updateLinks(ParamsWrapper *wrapper, PathNode *node);
 static int validate(const ParamsWrapper *wrapper);
 static int fArgRequiredError(void);
 
-Params getNewParams()
+Params getNewParams(void)
 {
 	static Params params = {
 		.archivePath = STDOUT_PATH,
