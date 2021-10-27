@@ -90,7 +90,7 @@ void setFileName(HeaderData *headerData, char *path)
 
 void setLinkName(HeaderData *headerData, char *name)
 {
-	int i = 0;
+	ssize_t i = 0;
 	if (headerData->type == SYMTYPE) {
 		i = readlink(name, headerData->linkname, HEADER_DATA_LINKNAME_SIZE);
 	} else if (headerData->type == LNKTYPE) {
