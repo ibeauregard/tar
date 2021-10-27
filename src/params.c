@@ -14,7 +14,6 @@ typedef struct s_params_wrapper
 	bool fArgExpected;
 } ParamsWrapper;
 
-static ParamsWrapper getNewParamsWrapper(Params *params);
 static int handleArgument(char *argument, ParamsWrapper *wrapper);
 static int handleOptions(char *options, ParamsWrapper *wrapper);
 static int handleOptionF(char nextOption, ParamsWrapper *wrapper);
@@ -35,23 +34,17 @@ Params getNewParams()
 
 int parseArguments(int n_arguments, char **arguments, Params *params)
 {
-	ParamsWrapper wrapper = getNewParamsWrapper(params);
+	ParamsWrapper wrapper = {
+			.params = params,
+		 	.last = NULL,
+		 	.fArgExpected = false
+	};
 	for (int i = 0; i < n_arguments; i++) {
 		if (handleArgument(arguments[i], &wrapper)) {
 			return EXIT_FAILURE;
 		}
 	}
 	return validate(&wrapper);
-}
-
-ParamsWrapper getNewParamsWrapper(Params *params)
-{
-	ParamsWrapper wrapper = {
-		.params = params,
-		.last = NULL,
-		.fArgExpected = false
-	};
-	return wrapper;
 }
 
 int handleArgument(char *argument, ParamsWrapper *wrapper)
